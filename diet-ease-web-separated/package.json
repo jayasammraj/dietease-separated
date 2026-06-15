@@ -1,0 +1,9 @@
+{
+  "name": "diet-ease-web-separated",
+  "version": "1.0.0",
+  "description": "Separated DietEase+ Web App",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  }
+}

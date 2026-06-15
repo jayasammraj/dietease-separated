@@ -1,0 +1,14 @@
+{
+  "name": "dietease-selenium-tests",
+  "version": "1.0.0",
+  "description": "End-to-end Selenium tests for DietEase+ with Excel reporting",
+  "main": "run-tests.js",
+  "scripts": {
+    "test": "node run-tests.js",
+    "test:headless": "node run-tests.js --headless"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.27.0",
+    "exceljs": "^4.4.0"
+  }
+}

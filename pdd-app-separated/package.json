@@ -1,0 +1,9 @@
+{
+  "name": "pdd-app-separated",
+  "version": "1.0.0",
+  "description": "Separated DietEase+ App",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  }
+}

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>DietEase+ | Smart Barcode Food Tracker</title>
+  <meta name="description" content="Scan food barcodes and track your daily nutrition with DietEase+. Works on any device, no installation needed."/>
+  <meta name="theme-color" content="#0a0e14"/>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json"/>
+
+  <!-- Apple / iOS PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="DietEase+"/>
+  <link rel="apple-touch-icon" href="/icon-192.png"/>
+  <link rel="apple-touch-startup-image" href="/icon-512.png"/>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
+
+  <!-- Microsoft / Windows -->
+  <meta name="msapplication-TileImage" content="/icon-192.png"/>
+  <meta name="msapplication-TileColor" content="#0a0e14"/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0e14;--surface:#12181f;--card:#1a2130;--border:#252d3a;
+      --accent:#00e5a0;--accent2:#00b8d4;--text:#e6edf3;
+      --muted:#6e7d8f;--danger:#ff5757;--warn:#f0a04b;--purple:#a78bfa;
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;
+      background-image:
+        radial-gradient(ellipse at 20% 10%,rgba(0,229,160,.07) 0%,transparent 50%),
+        radial-gradient(ellipse at 80% 80%,rgba(0,184,212,.06) 0%,transparent 50%),
+        linear-gradient(rgba(0,229,160,.02) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,229,160,.02) 1px,transparent 1px);
+      background-size:100% 100%,100% 100%,40px 40px,40px 40px;
+      pointer-events:none;z-index:0}
+
+    .wrap{max-width:500px;margin:0 auto;padding:20px 16px 110px;position:relative;z-index:1;animation:up .5s ease}
+    @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── Header ── */
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.5px}
+    .logo span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .badge{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+
+    /* ── Nav ── */
+    .nav{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:20px;position:sticky;top:8px;z-index:100;backdrop-filter:blur(12px)}
+    .nav-tab{flex:1;padding:9px 4px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-weight:600;font-size:11.5px;cursor:pointer;transition:all .25s;text-align:center;white-space:nowrap}
+    .nav-tab.active{background:var(--card);color:var(--accent);border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .nav-tab:hover:not(.active){color:var(--text)}
+    .page{display:none}.page.show{display:block;animation:up .3s ease}
+    .stitle{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.8s ease-in-out infinite;flex-shrink:0}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+    /* ── Scan Mode Tabs ── */
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+    .mode-tab{padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;text-align:center}
+    .mode-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.07)}
+    .mode-tab:hover:not(.active){border-color:rgba(0,229,160,.35);color:var(--text)}
+    .panel{display:none}.panel.show{display:block}
+
+    /* ── Camera ── */
+    .cam-box{position:relative;width:100%;border-radius:18px;overflow:hidden;background:#000;border:2px solid var(--border);margin-bottom:12px;transition:border-color .3s,box-shadow .3s}
+    .cam-box.on{border-color:var(--accent);box-shadow:0 0 30px rgba(0,229,160,.2)}
+    #video{width:100%;display:block;max-height:260px;object-fit:cover}
+    #canvas{display:none}
+    .idle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:50px 20px;color:var(--muted);background:var(--surface)}
+    .idle svg{opacity:.3;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .idle p{font-size:13px;text-align:center;line-height:1.7}
+    .scan-ui{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+    .scan-ui.on{display:flex}
+    .frame{width:74%;aspect-ratio:2.5/1;position:relative}
+    .frame::before,.frame::after,.frame .br,.frame .bl{content:'';position:absolute;width:24px;height:24px;border-color:var(--accent);border-style:solid}
+    .frame::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+    .frame::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+    .frame .br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+    .frame .bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+    .sline{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sl 1.8s ease-in-out infinite;box-shadow:0 0 6px var(--accent)}
+    @keyframes sl{0%{top:2px;opacity:1}100%{top:calc(100% - 2px);opacity:.1}}
+    .pill{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(6px);color:var(--accent);font-size:11px;padding:5px 14px;border-radius:20px;display:none;white-space:nowrap;border:1px solid rgba(0,229,160,.2)}
+    .pill.on{display:block}
+
+    /* ── Photo area ── */
+    .photo-area{border:2px dashed var(--border);border-radius:16px;padding:32px 20px;margin-bottom:12px;transition:all .3s;cursor:pointer;background:var(--surface);text-align:center}
+    .photo-area:hover{border-color:var(--accent);background:rgba(0,229,160,.04)}
+    .photo-area.has-img{border-style:solid;border-color:var(--accent);padding:0;overflow:hidden}
+    #capturedImg{width:100%;border-radius:14px;display:none}
+    .photo-icon{font-size:46px;margin-bottom:10px;animation:float 3s ease-in-out infinite}
+    .photo-label{font-size:13px;color:var(--muted);line-height:1.7}
+    .photo-label strong{color:var(--accent)}
+    #photoInput{display:none}
+
+    /* ── Buttons ── */
+    .btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#00c87a);color:#0a0e14;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,229,160,.38)}
+    .btn:active{transform:translateY(0)}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-outline{width:100%;padding:13px;background:transparent;color:var(--danger);border:1.5px solid rgba(255,87,87,.4);border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:12px}
+    .btn-outline:hover{background:rgba(255,87,87,.07);border-color:var(--danger)}
+    .btn-ghost{width:100%;padding:13px;background:rgba(0,229,160,.08);color:var(--accent);border:1.5px solid rgba(0,229,160,.22);border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+    .btn-ghost:hover{background:rgba(0,229,160,.15);transform:translateY(-2px)}
+
+    /* ── Manual row ── */
+    .mrow{display:flex;gap:8px;margin-bottom:8px}
+    .mrow input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;color:var(--text);font-size:14px;outline:none;transition:all .2s}
+    .mrow input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.09)}
+    .mrow input::placeholder{color:var(--muted)}
+    .mrow button{padding:13px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;color:var(--accent);font-size:18px;cursor:pointer;transition:all .2s}
+    .mrow button:hover{border-color:var(--accent);transform:scale(1.06)}
+    .hint{font-size:12px;color:var(--muted);margin-bottom:16px;text-align:center;line-height:1.6}
+
+    /* ── Engine & DB tags ── */
+    .engines,.dbtags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+    .eng,.dbt{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--muted);transition:all .35s}
+    .eng.hit,.dbt.hit{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08);animation:pop .35s ease}
+    .eng.searching,.dbt.searching{border-color:var(--warn);color:var(--warn);animation:blink .8s infinite}
+    .eng.fail,.dbt.fail{border-color:rgba(255,87,87,.3);color:var(--danger)}
+    @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    .sbar{display:none;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.18);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--accent);margin-bottom:12px;text-align:center;animation:up .3s ease}
+    .sbar.on{display:block}
+
+    /* ── Add card ── */
+    .add-card{background:var(--card);border:1px solid rgba(240,160,75,.35);border-radius:16px;padding:18px;margin-bottom:20px;display:none;animation:up .3s ease}
+    .add-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--warn);margin-bottom:14px}
+    .fg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .fg.full{grid-template-columns:1fr}
+    .ff label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
+    .ff input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
+    .ff input:focus{border-color:var(--warn)}
+    .ff input::placeholder{color:var(--muted);font-size:12px}
+    .save-btn{width:100%;padding:11px;background:rgba(240,160,75,.12);color:var(--warn);border:1px solid rgba(240,160,75,.35);border-radius:10px;font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;margin-top:4px;transition:all .2s}
+    .save-btn:hover{background:rgba(240,160,75,.22)}
+
+    /* ── Result card ── */
+    .result-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:24px;display:none}
+    .result-card.on{display:block;animation:bounce .4s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes bounce{0%{opacity:0;transform:scale(.92) translateY(18px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+    .rh{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+    .ricon{width:56px;height:56px;border-radius:16px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.18);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0}
+    .rname{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:3px;line-height:1.3}
+    .rbrand{font-size:12px;color:var(--muted)}
+    .rsrc{font-size:10px;color:var(--accent);margin-top:3px;font-weight:500}
+    .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+    .m{background:var(--surface);border-radius:12px;padding:11px 8px;text-align:center;border:1px solid var(--border);transition:transform .15s}
+    .m:hover{transform:scale(1.04)}
+    .mv{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:2px}
+    .mv.c{color:var(--accent)}.mv.p{color:var(--accent2)}.mv.cb{color:var(--warn)}.mv.f{color:var(--danger)}
+    .mv.bump{animation:vbump .25s ease}
+    @keyframes vbump{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
+    .ml{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .nonut{background:rgba(240,160,75,.08);border:1px solid rgba(240,160,75,.2);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--warn);margin-bottom:12px}
+    .srvrow{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:14px;padding:13px 16px;margin-bottom:12px;border:1px solid var(--border)}
+    .srvlabel{font-size:13px;color:var(--muted)}
+    .srvc{display:flex;align-items:center;gap:14px}
+    .sbtn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
+    .sbtn.minus:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,87,87,.08)}
+    .sbtn.plus:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+    .sbtn:active{transform:scale(.88)}
+    #sc{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;min-width:32px;text-align:center;transition:color .2s}
+    #sc.bump{animation:vbump .25s ease}
+    .logbtn{width:100%;padding:13px;background:rgba(0,229,160,.1);color:var(--accent);border:1.5px solid rgba(0,229,160,.28);border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s}
+    .logbtn:hover{background:rgba(0,229,160,.18);box-shadow:0 0 20px rgba(0,229,160,.18);transform:translateY(-1px)}
+
+    /* ── Summary / Goal ── */
+    .summary{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:22px}
+    .sum-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .sum-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+    .sum-right{display:flex;align-items:center;gap:8px}
+    .sum-cal{font-family:'Syne',sans-serif;font-weight:800;font-size:23px}
+    .sum-cal small{font-size:12px;font-weight:400;color:var(--muted)}
+    .gbtn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s}
+    .gbtn:hover{border-color:var(--accent);color:var(--accent)}
+    .ged{display:none;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:13px;margin-bottom:10px}
+    .ged.on{display:flex;gap:8px;align-items:center;animation:up .25s ease}
+    .ged label{font-size:12px;color:var(--muted);white-space:nowrap}
+    .ged input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:15px;font-family:'Syne',sans-serif;font-weight:700;outline:none}
+    .ged input:focus{border-color:var(--accent)}
+    .ged button{padding:8px 14px;background:linear-gradient(135deg,var(--accent),#00c87a);color:#0a0e14;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer}
+    .prog{height:8px;background:var(--surface);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .7s cubic-bezier(.34,1.2,.64,1)}
+    .prog-fill.over{background:linear-gradient(90deg,var(--danger),#ff4444)}
+
+    /* ── Log list ── */
+    .loglist{display:flex;flex-direction:column;gap:8px}
+    .litem{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 14px;animation:slin .35s cubic-bezier(.34,1.4,.64,1)}
+    @keyframes slin{from{opacity:0;transform:translateX(-14px) scale(.97)}to{opacity:1;transform:translateX(0) scale(1)}}
+    .ll{display:flex;align-items:center;gap:10px}
+    .lem{font-size:22px}
+    .lname{font-size:13px;font-weight:500}
+    .lmeta{font-size:11px;color:var(--muted)}
+    .lr{display:flex;align-items:center;gap:8px}
+    .lcal{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:14px}
+    .delbtn{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .15s}
+    .delbtn:hover{color:var(--danger);background:rgba(255,87,87,.1);transform:scale(1.2)}
+    .empty{text-align:center;padding:36px 0;color:var(--muted);font-size:13px}
+    .empty .ei{font-size:40px;margin-bottom:8px;opacity:.3;animation:float 3s ease-in-out infinite}
+
+    /* ── History ── */
+    .date-picker{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+    .date-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s}
+    .date-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+    .date-chip:hover:not(.active){border-color:rgba(255,255,255,.15);color:var(--text)}
+    .hist-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+    .hs-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+    .hs-val{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--accent)}
+    .hs-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+    .export-btn{width:100%;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:14px;transition:all .2s;font-family:'Syne',sans-serif;font-weight:600}
+    .export-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+
+    /* ── Products ── */
+    .search-bar{display:flex;gap:8px;margin-bottom:16px}
+    .search-bar input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-size:14px;outline:none;transition:all .2s}
+    .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08)}
+    .search-bar input::placeholder{color:var(--muted)}
+    .search-bar button{padding:12px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;color:var(--accent);font-size:16px;cursor:pointer;transition:all .2s}
+    .search-bar button:hover{border-color:var(--accent)}
+    .prod-list{display:flex;flex-direction:column;gap:8px}
+    .prod-item{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 14px;cursor:pointer;transition:all .2s}
+    .prod-item:hover{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.04);transform:translateX(2px)}
+    .pi-name{font-size:13px;font-weight:500;margin-bottom:2px}
+    .pi-brand{font-size:11px;color:var(--muted)}
+    .pi-cal{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:14px;white-space:nowrap}
+
+    /* ── Error / Toast / Confetti ── */
+    .err{background:rgba(255,87,87,.08);border:1px solid rgba(255,87,87,.25);color:var(--danger);border-radius:12px;padding:11px 14px;font-size:13px;margin-bottom:12px;display:none;white-space:pre-line;line-height:1.6}
+    .err.on{display:block;animation:up .3s ease}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:linear-gradient(135deg,var(--accent),#00c87a);color:#0a0e14;padding:12px 24px;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;transition:transform .38s cubic-bezier(.34,1.4,.64,1);z-index:9999;white-space:nowrap;box-shadow:0 6px 24px rgba(0,229,160,.4);pointer-events:none}
+    .toast.on{transform:translateX(-50%) translateY(0)}
+    .toast.w{background:linear-gradient(135deg,var(--warn),#d4870e);box-shadow:0 6px 24px rgba(240,160,75,.4)}
+    .toast.e{background:linear-gradient(135deg,var(--danger),#cc3434);box-shadow:0 6px 24px rgba(255,87,87,.4)}
+    .confwrap{position:fixed;inset:0;pointer-events:none;z-index:998;overflow:hidden}
+    .cp{position:absolute;border-radius:2px;animation:cfall linear forwards}
+    @keyframes cfall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Diet<span>Ease</span>+</div>
+    <div class="badge">BARCODE SCANNER</div>
+  </header>
+
+  <nav class="nav" role="tablist">
+    <button class="nav-tab active" id="nav-scan"     onclick="showPage('scan')"     role="tab">📷 Scan</button>
+    <button class="nav-tab"        id="nav-today"    onclick="showPage('today')"    role="tab">📋 Today</button>
+    <button class="nav-tab"        id="nav-history"  onclick="showPage('history')"  role="tab">📅 History</button>
+    <button class="nav-tab"        id="nav-products" onclick="showPage('products')" role="tab">🗄️ Products</button>
+  </nav>
+
+  <!-- ════ PAGE: SCAN ════ -->
+  <div class="page show" id="page-scan">
+    <div class="stitle"><div class="dot"></div>Scan Food Barcode</div>
+    <div class="mode-tabs">
+      <div class="mode-tab active" id="tab-live"  onclick="setMode('live')">📷 Live Camera</div>
+      <div class="mode-tab"        id="tab-photo" onclick="setMode('photo')">🖼️ Take Photo</div>
+    </div>
+
+    <div class="panel show" id="panel-live">
+      <div class="cam-box" id="camBox">
+        <div class="idle" id="idle">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M3 9V6a2 2 0 012-2h3M15 4h3a2 2 0 012 2v3M21 15v3a2 2 0 01-2 2h-3M9 20H6a2 2 0 01-2-2v-3"/>
+            <rect x="7" y="9" width="2" height="6" rx=".5"/><rect x="11" y="9" width="1" height="6" rx=".5"/><rect x="14" y="9" width="3" height="6" rx=".5"/>
+          </svg>
+          <p>Tap <strong style="color:var(--accent)">Start Camera</strong> below<br/>Works on <strong style="color:var(--accent)">HTTPS</strong> (this site) ✅</p>
+        </div>
+        <video id="video" autoplay muted playsinline style="display:none"></video>
+        <canvas id="canvas" style="display:none"></canvas>
+        <div class="scan-ui" id="scanUI">
+          <div class="frame"><div class="sline"></div><div class="br"></div><div class="bl"></div></div>
+        </div>
+        <div class="pill" id="pill">🔍 Scanning for barcode…</div>
+      </div>
+      <div class="btn" id="startBtn" onclick="startCam()" style="cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+        Start Camera
+      </div>
+      <button class="btn-outline" id="stopBtn" style="display:none" onclick="stopCam()">⏹ Stop Camera</button>
+    </div>
+
+    <div class="panel" id="panel-photo">
+      <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+        <div id="photoPlaceholder">
+          <div class="photo-icon">📸</div>
+          <div class="photo-label">Tap here to <strong>open camera</strong> and take a photo of the barcode.<br/><br/>Works on <strong>Android & iOS</strong> without HTTPS!</div>
+        </div>
+        <img id="capturedImg" src="" alt="captured"/>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(event)"/>
+      <button class="btn-ghost" onclick="document.getElementById('photoInput').click()">📷 Open Camera &amp; Take Photo</button>
+      <div class="hint">📌 Clear photo · flat surface · good lighting</div>
+    </div>
+
+    <div class="mrow">
+      <input type="text" id="manualInput" placeholder="Type barcode (e.g. 8901030810054)" maxlength="14"/>
+      <button onclick="manualLookup()" title="Search">🔍</button>
+    </div>
+    <p class="hint">Tip: Type the numbers printed below the barcode if scanning fails</p>
+
+    <div class="engines" id="engines">
+      <span class="eng" id="eng-native">🔷 Native API</span>
+      <span class="eng" id="eng-zxing">📦 ZXing</span>
+      <span class="eng" id="eng-quagga">🔬 Quagga</span>
+    </div>
+    <div class="dbtags">
+      <span class="dbt" id="t1">🌍 OFF Global</span>
+      <span class="dbt" id="t2">🇮🇳 OFF India</span>
+      <span class="dbt" id="t3">🇺🇸 UPC DB</span>
+      <span class="dbt" id="t4">🇪🇺 OFF EU</span>
+      <span class="dbt" id="t5">⚡ Built-in</span>
+      <span class="dbt" id="t6">✍️ Manual</span>
+    </div>
+    <div class="sbar" id="sbar">Searching databases…</div>
+    <div class="err"  id="err"></div>
+
+    <div class="add-card" id="addCard">
+      <div class="add-title">⚠️ Product not found — enter details manually</div>
+      <div class="fg full"><div class="ff"><label>Product Name *</label><input id="maName" type="text" placeholder="e.g. Parle-G Biscuit"/></div></div>
+      <div class="fg">
+        <div class="ff"><label>Brand</label><input id="maBrand" type="text" placeholder="e.g. Parle"/></div>
+        <div class="ff"><label>Calories/100g</label><input id="maCal" type="number" placeholder="450"/></div>
+      </div>
+      <div class="fg">
+        <div class="ff"><label>Protein g</label><input id="maProt" type="number" placeholder="0"/></div>
+        <div class="ff"><label>Carbs g</label><input id="maCarb" type="number" placeholder="0"/></div>
+      </div>
+      <div class="fg">
+        <div class="ff"><label>Fat g</label><input id="maFat" type="number" placeholder="0"/></div>
+        <div class="ff"><label>Barcode</label><input id="maBarcode" type="text" readonly/></div>
+      </div>
+      <button class="save-btn" onclick="saveManual()">✅ Save &amp; Log</button>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="rh">
+        <div class="ricon" id="rIcon">🥗</div>
+        <div>
+          <div class="rname"  id="rName">—</div>
+          <div class="rbrand" id="rBrand">—</div>
+          <div class="rsrc"   id="rSrc">—</div>
+        </div>
+      </div>
+      <div class="nonut" id="noNut" style="display:none">⚠️ Nutrition data unavailable — calories logged as 0.</div>
+      <div class="macros">
+        <div class="m"><div class="mv c"  id="rCal">—</div><div class="ml">kcal</div></div>
+        <div class="m"><div class="mv p"  id="rProt">—</div><div class="ml">protein</div></div>
+        <div class="m"><div class="mv cb" id="rCarb">—</div><div class="ml">carbs</div></div>
+        <div class="m"><div class="mv f"  id="rFat">—</div><div class="ml">fat</div></div>
+      </div>
+      <div class="srvrow">
+        <span class="srvlabel">Servings (×100g)</span>
+        <div class="srvc">
+          <button class="sbtn minus" onclick="srv(-1)">−</button>
+          <span id="sc">1</span>
+          <button class="sbtn plus" onclick="srv(1)">+</button>
+        </div>
+      </div>
+      <button class="logbtn" onclick="logFood()">＋ Log This Food</button>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: TODAY ════ -->
+  <div class="page" id="page-today">
+    <div class="stitle"><div class="dot" style="background:var(--accent2);box-shadow:0 0 8px var(--accent2)"></div>Today's Log</div>
+    <div class="summary">
+      <div class="sum-top">
+        <span class="sum-label">Calories Consumed</span>
+        <div class="sum-right">
+          <span class="sum-cal"><span id="totalCal">0</span><small> / <span id="goalDisp">2000</span> kcal</small></span>
+          <button class="gbtn" onclick="toggleGoal()">✏️ Goal</button>
+        </div>
+      </div>
+      <div class="ged" id="ged">
+        <label>Daily Goal:</label>
+        <input type="number" id="goalInput" placeholder="2000" min="100" max="9999"/>
+        <button onclick="saveGoal()">Save</button>
+      </div>
+      <div class="prog"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div class="loglist" id="logList">
+      <div class="empty"><div class="ei">🍽️</div><p>No foods logged yet today</p></div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: HISTORY ════ -->
+  <div class="page" id="page-history">
+    <div class="stitle"><div class="dot" style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></div>Food History</div>
+    <button class="export-btn" onclick="exportCSV()">📥 Export Today's Log as CSV</button>
+    <div class="date-picker" id="datePicker"></div>
+    <div class="hist-summary" id="histSummary" style="display:none">
+      <div class="hs-box"><div class="hs-val" id="hs-cal">0</div><div class="hs-lbl">kcal</div></div>
+      <div class="hs-box"><div class="hs-val" id="hs-prot" style="color:var(--accent2)">0g</div><div class="hs-lbl">protein</div></div>
+      <div class="hs-box"><div class="hs-val" id="hs-carb" style="color:var(--warn)">0g</div><div class="hs-lbl">carbs</div></div>
+      <div class="hs-box"><div class="hs-val" id="hs-fat"  style="color:var(--danger)">0g</div><div class="hs-lbl">fat</div></div>
+    </div>
+    <div class="loglist" id="histList">
+      <div class="empty"><div class="ei">📅</div><p>Select a date above</p></div>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: PRODUCTS ════ -->
+  <div class="page" id="page-products">
+    <div class="stitle"><div class="dot" style="background:var(--warn);box-shadow:0 0 8px var(--warn)"></div>Product Database</div>
+    <div class="search-bar">
+      <input type="text" id="prodSearch" placeholder="Search products or brands…" oninput="searchProducts()"/>
+      <button onclick="searchProducts()">🔍</button>
+    </div>
+    <div class="prod-list" id="prodList">
+      <div class="empty"><div class="ei">🗄️</div><p>Loading products…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="confwrap" id="confwrap"></div>
+<div class="toast"    id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE — stored fully in localStorage
+═══════════════════════════════════════════════ */
+let dailyGoal = parseInt(localStorage.getItem('de_goal')) || 2000;
+let foodLog   = [];
+let current   = null, servings = 1;
+let stream    = null, rafId = null, detecting = false;
+
+// Custom product cache (user-scanned items)
+let productCache = JSON.parse(localStorage.getItem('de_products') || '{}');
+
+/* ── Built-in DB (23 Indian & global products) ── */
+const BUILTIN = {
+  '8901719100018':{name:'Parle-G Biscuits',brand:'Parle',calories:450,protein:6.7,carbs:76,fat:11.7},
+  '8901719110017':{name:'Parle Hide & Seek',brand:'Parle',calories:496,protein:6.2,carbs:66,fat:23},
+  '8901030810054':{name:'Parle-G Gold',brand:'Parle',calories:450,protein:6.7,carbs:76,fat:11.7},
+  '8901063032019':{name:'Britannia Good Day',brand:'Britannia',calories:503,protein:7,carbs:64,fat:24},
+  '8901063030015':{name:'Britannia Marie Gold',brand:'Britannia',calories:416,protein:8,carbs:74,fat:9},
+  '8901058851336':{name:'Maggi 2-Min Noodles',brand:'Nestlé',calories:375,protein:9.4,carbs:57,fat:12.2},
+  '8901088002230':{name:'Amul Butter',brand:'Amul',calories:720,protein:0.5,carbs:0,fat:80},
+  '8901088000885':{name:'Amul Taaza Milk',brand:'Amul',calories:58,protein:3.2,carbs:4.8,fat:3},
+  '8901088012007':{name:'Amul Cheese Slice',brand:'Amul',calories:300,protein:18,carbs:4,fat:24},
+  '8902045000018':{name:'Haldirams Bhujia',brand:'Haldirams',calories:536,protein:12,carbs:56,fat:28},
+  '8901491502759':{name:"Lay's Classic Salted",brand:"Lay's",calories:536,protein:6.2,carbs:52.3,fat:34},
+  '8901491107474':{name:"Lay's Magic Masala",brand:"Lay's",calories:547,protein:6.4,carbs:54,fat:33},
+  '8901491100109':{name:'Kurkure Masala Munch',brand:'PepsiCo',calories:537,protein:6.7,carbs:58,fat:30},
+  '8904004400019':{name:'Sunfeast Dark Fantasy',brand:'ITC',calories:517,protein:6.5,carbs:64,fat:26},
+  '8901499000018':{name:"Kellogg's Cornflakes",brand:"Kellogg's",calories:357,protein:8,carbs:79,fat:1},
+  '7622210449283':{name:'Cadbury Dairy Milk',brand:'Cadbury',calories:534,protein:7.7,carbs:57.6,fat:29.7},
+  '7622210979063':{name:'Cadbury 5 Star',brand:'Cadbury',calories:462,protein:4,carbs:70,fat:18},
+  '8901058501203':{name:'KitKat 4 Finger',brand:'Nestlé',calories:518,protein:6.3,carbs:63,fat:27},
+  '8901552004123':{name:'Coca-Cola 250ml',brand:'Coca-Cola',calories:44,protein:0,carbs:11,fat:0},
+  '8901012000016':{name:'Pepsi 250ml',brand:'PepsiCo',calories:42,protein:0,carbs:10.6,fat:0},
+  '049000050103' :{name:'Coca-Cola Classic',brand:'Coca-Cola',calories:42,protein:0,carbs:10.6,fat:0},
+  '038000845321' :{name:"Kellogg's Corn Flakes",brand:"Kellogg's",calories:357,protein:8,carbs:79,fat:.5},
+  '037600164801' :{name:'Oreo Cookies',brand:'Nabisco',calories:471,protein:5,carbs:70,fat:20},
+};
+
+/* ═══════════════════════════════════════════════
+   EMOJI MAPPER (must be before INIT so emo() works on page load)
+═══════════════════════════════════════════════ */
+const EM={beverage:'🥤',drink:'🥤',water:'💧',juice:'🍹',cola:'🥤',soda:'🥤',milk:'🥛',cheese:'🧀',yogurt:'🥣',bread:'🍞',rice:'🍚',pasta:'🍝',cereal:'🥣',chip:'🥔',snack:'🍟',cookie:'🍪',candy:'🍬',chocolate:'🍫',biscuit:'🍪',cracker:'🫙',fruit:'🍎',apple:'🍎',banana:'🍌',orange:'🍊',salad:'🥗',meat:'🥩',chicken:'🍗',fish:'🐟',tuna:'🐟',egg:'🥚',sauce:'🫙',soup:'🍲',coffee:'☕',tea:'🍵',protein:'💪',bar:'🍫',nuts:'🥜',peanut:'🥜',oat:'🥣',granola:'🥣',ice:'🍦',cake:'🎂',pizza:'🍕',burger:'🍔',noodle:'🍜',corn:'🌽',butter:'🧈',ghee:'🫙'};
+function emo(n=''){const l=n.toLowerCase();for(const[k,e]of Object.entries(EM))if(l.includes(k))return e;return'🥗';}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+updateGoalUI();
+loadTodayLog();
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function showPage(p) {
+  ['scan','today','history','products'].forEach(n => {
+    document.getElementById('page-'+n).classList.toggle('show', n===p);
+    document.getElementById('nav-'+n).classList.toggle('active', n===p);
+  });
+  if (p==='history')  loadHistoryDates();
+  if (p==='products') loadProducts();
+  if (p==='today')    loadTodayLog();
+}
+
+/* ═══════════════════════════════════════════════
+   GOAL
+═══════════════════════════════════════════════ */
+function updateGoalUI() {
+  document.getElementById('goalDisp').textContent = dailyGoal;
+  document.getElementById('goalInput').value = dailyGoal;
+}
+function toggleGoal() {
+  const ed = document.getElementById('ged');
+  ed.classList.toggle('on');
+  if (ed.classList.contains('on')) document.getElementById('goalInput').focus();
+}
+function saveGoal() {
+  const v = parseInt(document.getElementById('goalInput').value);
+  if (!v || v<100) { toast('Enter a valid goal','w'); return; }
+  dailyGoal = v;
+  localStorage.setItem('de_goal', v);
+  document.getElementById('ged').classList.remove('on');
+  renderLog(); toast(`🎯 Goal set to ${v} kcal!`); updateGoalUI();
+}
+
+/* ═══════════════════════════════════════════════
+   TODAY LOG (localStorage)
+═══════════════════════════════════════════════ */
+function todayKey() { return new Date().toLocaleDateString('en-CA'); }
+
+function loadTodayLog() {
+  foodLog = JSON.parse(localStorage.getItem('de_log_'+todayKey()) || '[]');
+  renderLog();
+}
+function saveLog() {
+  localStorage.setItem('de_log_'+todayKey(), JSON.stringify(foodLog));
+}
+function renderLog() {
+  const total = foodLog.reduce((s,e) => s+(e.loggedCal||0), 0);
+  document.getElementById('totalCal').textContent = total;
+  const pct = Math.min(100,(total/dailyGoal)*100);
+  const fill = document.getElementById('progFill');
+  fill.style.width = pct+'%';
+  fill.className = 'prog-fill'+(total>dailyGoal?' over':'');
+  const list = document.getElementById('logList');
+  if (!foodLog.length) { list.innerHTML='<div class="empty"><div class="ei">🍽️</div><p>No foods logged yet today</p></div>'; return; }
+  list.innerHTML = foodLog.map(e=>`
+    <div class="litem">
+      <div class="ll"><div class="lem">${emo(e.name)}</div>
+        <div><div class="lname">${e.name}</div><div class="lmeta">${e.servings}× · ${e.time} · ${e.source||''}</div></div>
+      </div>
+      <div class="lr"><div class="lcal">${e.loggedCal} kcal</div>
+        <button class="delbtn" onclick="delEntry(${e.id})" title="Remove">✕</button>
+      </div>
+    </div>`).join('');
+}
+function delEntry(id) {
+  foodLog = foodLog.filter(e=>e.id!==id);
+  saveLog(); renderLog(); toast('🗑️ Removed','w');
+}
+function logFood() {
+  if (!current) return;
+  const e = {
+    ...current,
+    id: Date.now(),
+    loggedCal: Math.round((current.calories||0)*servings),
+    servings,
+    time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  };
+  foodLog.unshift(e); saveLog(); renderLog();
+  // Cache to products
+  if (e.barcode) {
+    productCache[e.barcode] = {barcode:e.barcode,name:e.name,brand:e.brand||'',calories:e.calories||0,protein:e.protein||0,carbs:e.carbs||0,fat:e.fat||0,source:e.source||''};
+    localStorage.setItem('de_products', JSON.stringify(productCache));
+  }
+  toast(`✅ ${e.name} logged!`); confetti();
+  document.getElementById('resultCard').classList.remove('on');
+  current=null; servings=1;
+  ['t1','t2','t3','t4','t5','t6'].forEach(id=>tag(id,''));
+}
+
+/* ═══════════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════════ */
+function loadHistoryDates() {
+  // Collect all dates from localStorage keys
+  const dates = [];
+  for (let i=0; i<localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('de_log_')) {
+      const d = k.replace('de_log_','');
+      const entries = JSON.parse(localStorage.getItem(k)||'[]');
+      if (entries.length) dates.push(d);
+    }
+  }
+  dates.sort().reverse();
+  const picker = document.getElementById('datePicker');
+  picker.innerHTML = '';
+  if (!dates.length) { picker.innerHTML='<span style="color:var(--muted);font-size:12px">No history yet — start logging food!</span>'; return; }
+  dates.forEach(date=>{
+    const chip = document.createElement('div');
+    chip.className = 'date-chip'+(date===todayKey()?' active':'');
+    chip.textContent = fmtDate(date); chip.dataset.date=date;
+    chip.onclick = ()=>{
+      document.querySelectorAll('.date-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); loadHistoryForDate(date);
+    };
+    picker.appendChild(chip);
+  });
+  if (dates.length) loadHistoryForDate(dates[0]);
+}
+function loadHistoryForDate(date) {
+  const entries = JSON.parse(localStorage.getItem('de_log_'+date)||'[]');
+  const tCal  = entries.reduce((s,e)=>s+(e.loggedCal||0),0);
+  const tProt = entries.reduce((s,e)=>s+((e.protein||0)*(e.servings||1)),0);
+  const tCarb = entries.reduce((s,e)=>s+((e.carbs||0)*(e.servings||1)),0);
+  const tFat  = entries.reduce((s,e)=>s+((e.fat||0)*(e.servings||1)),0);
+  document.getElementById('hs-cal').textContent  = tCal;
+  document.getElementById('hs-prot').textContent = tProt.toFixed(1)+'g';
+  document.getElementById('hs-carb').textContent = tCarb.toFixed(1)+'g';
+  document.getElementById('hs-fat').textContent  = tFat.toFixed(1)+'g';
+  document.getElementById('histSummary').style.display='grid';
+  const list=document.getElementById('histList');
+  if (!entries.length){list.innerHTML='<div class="empty"><div class="ei">🍽️</div><p>No entries for this date</p></div>';return;}
+  list.innerHTML=entries.map(e=>`<div class="litem">
+    <div class="ll"><div class="lem">${emo(e.name)}</div>
+      <div><div class="lname">${e.name}</div><div class="lmeta">${e.servings||1}× · ${e.time||''} · ${e.source||''}</div></div>
+    </div>
+    <div class="lr"><div class="lcal">${e.loggedCal||0} kcal</div></div>
+  </div>`).join('');
+}
+function fmtDate(d){
+  if(d===todayKey())return'Today';
+  const dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function exportCSV(){
+  const header='Name,Brand,Source,Servings,Calories,Protein,Carbs,Fat,Time\n';
+  const rows=foodLog.map(e=>[e.name,e.brand||'',e.source||'',e.servings||1,e.loggedCal||0,(e.protein||0).toFixed(1),(e.carbs||0).toFixed(1),(e.fat||0).toFixed(1),e.time||''].map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob([header+rows],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dietease-${todayKey()}.csv`;a.click();
+}
+
+/* ═══════════════════════════════════════════════
+   PRODUCTS (localStorage cache + built-in)
+═══════════════════════════════════════════════ */
+function loadProducts(q='') {
+  const all = {...BUILTIN};
+  for (const [k,v] of Object.entries(productCache)) all[k]=v;
+  let list = Object.values(all);
+  if (q) { const ql=q.toLowerCase(); list=list.filter(p=>(p.name||'').toLowerCase().includes(ql)||(p.brand||'').toLowerCase().includes(ql)); }
+  list.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  const el = document.getElementById('prodList');
+  if (!list.length){el.innerHTML='<div class="empty"><div class="ei">🔍</div><p>No products found</p></div>';return;}
+  el.innerHTML=list.map(p=>`<div class="prod-item" onclick="useCachedProduct('${p.barcode||''}','${(p.name||'').replace(/'/g,"\\'")}')">
+    <div><div class="pi-name">${p.name||'Unknown'}</div><div class="pi-brand">${p.brand||'—'} · ${p.barcode||'manual'}</div></div>
+    <div class="pi-cal">${p.calories||0} kcal</div>
+  </div>`).join('');
+}
+function searchProducts(){loadProducts(document.getElementById('prodSearch').value.trim());}
+function useCachedProduct(barcode,name){
+  showPage('scan');
+  if(barcode) lookupBarcode(barcode);
+}
+
+/* ═══════════════════════════════════════════════
+   SCAN MODE TOGGLE
+═══════════════════════════════════════════════ */
+function setMode(m){
+  document.getElementById('tab-live').classList.toggle('active',m==='live');
+  document.getElementById('tab-photo').classList.toggle('active',m==='photo');
+  document.getElementById('panel-live').classList.toggle('show',m==='live');
+  document.getElementById('panel-photo').classList.toggle('show',m==='photo');
+  if(m==='live'&&stream)stopCam();
+}
+
+/* ═══════════════════════════════════════════════
+   UNIVERSAL BARCODE SCANNING — 3 engines
+═══════════════════════════════════════════════ */
+const ALL_FMT=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code','data_matrix'];
+function setEng(id,cls){const el=document.getElementById('eng-'+id);if(el)el.className='eng'+(cls?' '+cls:'');}
+
+async function handlePhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  const img=document.getElementById('capturedImg');
+  img.src=URL.createObjectURL(file);img.style.display='block';
+  document.getElementById('photoPlaceholder').style.display='none';
+  document.getElementById('photoArea').classList.add('has-img');
+  showErr('');showSbar('🔍 Reading barcode from photo…');
+
+  // Engine 1: Native BarcodeDetector
+  if('BarcodeDetector'in window){
+    try{
+      setEng('native','searching');
+      await img.decode();
+      const det=new BarcodeDetector({formats:ALL_FMT});
+      const res=await det.detect(img);
+      if(res&&res.length>0){setEng('native','hit');hideSbar();lookupBarcode(res[0].rawValue);e.target.value='';return;}
+      setEng('native','fail');
+    }catch{setEng('native','fail');}
+  }
+  // Engine 2: ZXing
+  try{
+    setEng('zxing','searching');
+    const bmp=await createImageBitmap(file);
+    const cv=document.createElement('canvas');cv.width=bmp.width;cv.height=bmp.height;
+    cv.getContext('2d').drawImage(bmp,0,0);
+    if(!window.ZXing)await loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js');
+    const result=await new ZXing.BrowserMultiFormatReader().decodeFromCanvas(cv);
+    if(result){setEng('zxing','hit');hideSbar();lookupBarcode(result.getText());e.target.value='';return;}
+    setEng('zxing','fail');
+  }catch{setEng('zxing','fail');}
+  // Engine 3: Quagga
+  try{
+    setEng('quagga','searching');
+    if(!window.Quagga)await loadScript('https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js');
+    const code=await new Promise(res=>{
+      const fr=new FileReader();fr.onload=ev=>{
+        Quagga.decodeSingle({src:ev.target.result,numOfWorkers:0,inputStream:{size:800},
+          decoder:{readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader','upc_e_reader','i2of5_reader']}
+        },r=>res(r&&r.codeResult?r.codeResult.code:null));
+      };fr.readAsDataURL(file);
+    });
+    if(code){setEng('quagga','hit');hideSbar();lookupBarcode(code);e.target.value='';return;}
+    setEng('quagga','fail');
+  }catch{setEng('quagga','fail');}
+  hideSbar();e.target.value='';
+  showErr('❌ Could not read barcode from this photo.\n👉 Try again with better lighting.\n👉 Or type the barcode number manually below.');
+}
+
+async function startCam(){
+  showErr('');
+  const btn=document.getElementById('startBtn');
+  btn.style.opacity='.5';btn.style.pointerEvents='none';btn.innerHTML='⏳ Starting…';
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    const v=document.getElementById('video');v.srcObject=stream;await v.play();
+    document.getElementById('idle').style.display='none';v.style.display='block';
+    document.getElementById('scanUI').classList.add('on');document.getElementById('pill').classList.add('on');
+    document.getElementById('camBox').classList.add('on');btn.style.display='none';
+    document.getElementById('stopBtn').style.display='block';detecting=false;
+
+    if('BarcodeDetector'in window){
+      setEng('native','searching');
+      const det=new BarcodeDetector({formats:ALL_FMT});
+      const loop=async()=>{if(!stream||detecting)return;try{const res=await det.detect(v);if(res&&res.length>0){setEng('native','hit');onDetected(res[0].rawValue);return;}}catch(_){}rafId=requestAnimationFrame(loop);};
+      loop();
+    }else{
+      setEng('zxing','searching');
+      if(!window.ZXing)await loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js');
+      const cv=document.getElementById('canvas');
+      const tick=()=>{if(!stream||detecting)return;const vEl=document.getElementById('video');if(vEl.readyState>=2){cv.width=vEl.videoWidth;cv.height=vEl.videoHeight;cv.getContext('2d').drawImage(vEl,0,0);try{const lum=new ZXing.HTMLCanvasElementLuminanceSource(cv);const bmp2=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum));const res=new ZXing.MultiFormatReader().decode(bmp2);if(res){setEng('zxing','hit');onDetected(res.getText());return;}}catch(_){}}rafId=requestAnimationFrame(tick);};
+      tick();
+    }
+  }catch(ex){
+    let msg='❌ Camera error.\n';
+    if(/NotAllowed|Permission/i.test(ex.message))msg+='Permission denied.\n\n👉 Try the "Take Photo" tab instead!';
+    else msg+=ex.message+'\n\n👉 Try the "Take Photo" tab instead!';
+    showErr(msg);
+  }
+  btn.style.opacity='1';btn.style.pointerEvents='auto';
+  btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg> Start Camera`;
+  btn.style.display=stream?'none':'flex';
+}
+function onDetected(code){if(!code||detecting)return;detecting=true;stopCam();lookupBarcode(code);}
+function stopCam(){
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  detecting=false;
+  const v=document.getElementById('video');v.srcObject=null;v.style.display='none';
+  document.getElementById('idle').style.display='flex';
+  document.getElementById('scanUI').classList.remove('on');document.getElementById('pill').classList.remove('on');
+  document.getElementById('camBox').classList.remove('on');
+  document.getElementById('startBtn').style.display='flex';
+  document.getElementById('stopBtn').style.display='none';
+}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
+/* ═══════════════════════════════════════════════
+   BARCODE LOOKUP — cascaded multi-DB
+═══════════════════════════════════════════════ */
+function manualLookup(){
+  const code=document.getElementById('manualInput').value.trim().replace(/\s/g,'');
+  if(!code){showErr('Please enter a barcode.');return;}
+  lookupBarcode(code);
+}
+
+async function lookupBarcode(code){
+  showErr('');
+  document.getElementById('addCard').style.display='none';
+  document.getElementById('resultCard').classList.remove('on');
+  ['t1','t2','t3','t4','t5','t6'].forEach(id=>tag(id,''));
+  ['t1','t2','t3','t4'].forEach(id=>tag(id,'searching'));
+  showSbar(`🔍 Searching for: ${code}`);
+
+  // 1. Built-in
+  if(BUILTIN[code]){hideSbar();tag('t5','hit');setCurrent({...BUILTIN[code],barcode:code,source:'⚡ Built-in DB'});return;}
+  // 2. User cache
+  if(productCache[code]){hideSbar();tag('t6','hit');setCurrent({...productCache[code],barcode:code});return;}
+
+  // 3. Online APIs
+  const[r1,r2,r3,r4]=await Promise.allSettled([dbOFF('world',code),dbOFF('in',code),dbUPC(code),dbOFF('fr',code)]);
+  hideSbar();
+  if(r1.value)tag('t1','hit');else tag('t1','fail');
+  if(r2.value)tag('t2','hit');else tag('t2','fail');
+  if(r3.value)tag('t3','hit');else tag('t3','fail');
+  if(r4.value)tag('t4','hit');else tag('t4','fail');
+  const all=[r1,r2,r3,r4].map(r=>r.value).filter(Boolean);
+  const best=all.find(f=>f.calories>0)||all[0]||null;
+  if(best){setCurrent(best);}
+  else{showErr(`❌ Barcode "${code}" not found in any database.\nFill in the product details below 👇`);openAdd(code);tag('t6','searching');}
+}
+
+async function dbOFF(region,code){
+  try{
+    const r=await fetch(`https://${region}.openfoodfacts.org/api/v0/product/${code}.json`,{signal:AbortSignal.timeout(6000)});
+    const d=await r.json();
+    if(d.status===0||!d.product)return null;
+    const p=d.product,n=p.nutriments||{};
+    const name=p.product_name||p.product_name_en||p.product_name_fr||p.generic_name||'';
+    if(!name)return null;
+    const sm={world:'🌍 Open Food Facts',in:'🇮🇳 OFF India',fr:'🇪🇺 OFF Europe'};
+    return{name,brand:p.brands||'',barcode:code,calories:Math.round(n['energy-kcal_100g']||(n['energy_100g']||0)/4.184),protein:+(n['proteins_100g']||0).toFixed(1),carbs:+(n['carbohydrates_100g']||0).toFixed(1),fat:+(n['fat_100g']||0).toFixed(1),source:`✅ ${sm[region]||'OFF'}`};
+  }catch{return null;}
+}
+async function dbUPC(code){
+  try{
+    const r=await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`,{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    if(!d.items||!d.items[0]||!d.items[0].title)return null;
+    return{name:d.items[0].title,brand:d.items[0].brand||'',barcode:code,calories:0,protein:0,carbs:0,fat:0,source:'✅ UPC Item DB',noNutrition:true};
+  }catch{return null;}
+}
+
+/* ═══════════════════════════════════════════════
+   RESULT CARD
+═══════════════════════════════════════════════ */
+function setCurrent(food){
+  current=food;servings=1;
+  document.getElementById('rName').textContent=food.name||'Unknown';
+  document.getElementById('rBrand').textContent=food.brand||'';
+  document.getElementById('rSrc').textContent=food.source||'';
+  document.getElementById('rIcon').textContent=emo(food.name);
+  document.getElementById('noNut').style.display=food.noNutrition?'block':'none';
+  updateMacros(false);
+  document.getElementById('resultCard').classList.add('on');
+}
+function updateMacros(bump){
+  const s=servings;
+  [['rCal',Math.round((current.calories||0)*s)],['rProt',((current.protein||0)*s).toFixed(1)+'g'],['rCarb',((current.carbs||0)*s).toFixed(1)+'g'],['rFat',((current.fat||0)*s).toFixed(1)+'g']].forEach(([id,val])=>{
+    const el=document.getElementById(id);el.textContent=val;
+    if(bump){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
+  });
+  const sc=document.getElementById('sc');
+  sc.textContent=servings%1===0?servings:servings.toFixed(1);
+  if(bump){sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');}
+}
+function srv(d){
+  const n=Math.round((servings+d*.5)*10)/10;
+  if(n<.5){const sc=document.getElementById('sc');sc.style.color='var(--danger)';setTimeout(()=>sc.style.color='',500);return;}
+  servings=n;updateMacros(true);
+}
+
+/* ═══════════════════════════════════════════════
+   MANUAL ADD
+═══════════════════════════════════════════════ */
+function openAdd(code){
+  document.getElementById('addCard').style.display='block';
+  document.getElementById('maBarcode').value=code;
+  ['maName','maBrand','maCal','maProt','maCarb','maFat'].forEach(id=>document.getElementById(id).value='');
+}
+function saveManual(){
+  const name=document.getElementById('maName').value.trim();
+  if(!name){showErr('Please enter the product name.');return;}
+  const barcode=document.getElementById('maBarcode').value;
+  const prod={name,brand:document.getElementById('maBrand').value.trim(),barcode,
+    calories:parseFloat(document.getElementById('maCal').value)||0,
+    protein:parseFloat(document.getElementById('maProt').value)||0,
+    carbs:parseFloat(document.getElementById('maCarb').value)||0,
+    fat:parseFloat(document.getElementById('maFat').value)||0,source:'✍️ Manual Entry'};
+  // Save to local cache permanently
+  if(barcode){productCache[barcode]=prod;localStorage.setItem('de_products',JSON.stringify(productCache));}
+  setCurrent(prod);document.getElementById('addCard').style.display='none';tag('t6','hit');showErr('');
+}
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function tag(id,s){const el=document.getElementById(id);if(el)el.className='dbt'+(s?' '+s:'');}
+function showErr(msg){const el=document.getElementById('err');el.textContent=msg;el.className='err'+(msg?' on':'');}
+function showSbar(msg){const sb=document.getElementById('sbar');sb.textContent=msg;sb.classList.add('on');}
+function hideSbar(){document.getElementById('sbar').classList.remove('on');}
+let _tt;
+function toast(msg,t=''){
+  const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(t?' '+t:'');
+  el.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),2800);
+}
+function confetti(){
+  const wrap=document.getElementById('confwrap');
+  const cols=['#00e5a0','#00b8d4','#f0a04b','#ff6b6b','#a78bfa','#fff'];
+  for(let i=0;i<32;i++){
+    const p=document.createElement('div');p.className='cp';
+    const sz=5+Math.random()*8;
+    p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${.8+Math.random()*1.2}s;animation-delay:${Math.random()*.4}s;`;
+    wrap.appendChild(p);setTimeout(()=>p.remove(),2400);
+  }
+}
+
+/* ── Keyboard shortcuts ── */
+document.getElementById('manualInput').addEventListener('keydown',e=>{if(e.key==='Enter')manualLookup();});
+document.getElementById('goalInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveGoal();});
+
+/* ── PWA Service Worker Registration ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('[PWA] Service Worker registered:', reg.scope);
+    }).catch(err => {
+      console.warn('[PWA] SW registration failed:', err);
+    });
+  });
+}
+
+/* ── PWA Install Prompt (Android / Desktop Chrome) ── */
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show a subtle install banner
+  const banner = document.createElement('div');
+  banner.id = 'pwa-banner';
+  banner.innerHTML = `
+    <div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:999;
+      background:linear-gradient(135deg,#1a2130,#252d3a);border:1px solid #00e5a0;
+      border-radius:16px;padding:12px 20px;display:flex;align-items:center;gap:12px;
+      box-shadow:0 8px 32px rgba(0,229,160,.2);animation:up .4s ease;min-width:280px">
+      <span style="font-size:28px">📲</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#e6edf3;font-size:14px">Install DietEase+</div>
+        <div style="color:#6e7d8f;font-size:12px">Add to home screen for app experience</div>
+      </div>
+      <button onclick="installPWA()" style="background:#00e5a0;color:#0a0e14;border:none;
+        border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
+      <button onclick="document.getElementById('pwa-banner').remove()" style="background:none;
+        border:none;color:#6e7d8f;cursor:pointer;font-size:18px;padding:0 4px">✕</button>
+    </div>`;
+  document.body.appendChild(banner);
+  setTimeout(() => { if(banner.parentNode) banner.remove(); }, 15000);
+});
+
+function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') toast('✅ DietEase+ installed!');
+    deferredInstallPrompt = null;
+    const b = document.getElementById('pwa-banner');
+    if (b) b.remove();
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  toast('🎉 App installed successfully!');
+  deferredInstallPrompt = null;
+});
+</script>
+</body>
+</html>

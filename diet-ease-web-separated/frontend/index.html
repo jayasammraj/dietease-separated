@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DietEase+ | Barcode Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0d1117;--surface:#161b22;--card:#1c2333;--border:#30363d;
+      --accent:#00e5a0;--accent2:#00b8d4;--text:#e6edf3;
+      --muted:#8b949e;--danger:#ff6b6b;--warn:#f0a04b;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .wrap{max-width:480px;margin:0 auto;padding:24px 16px 80px;position:relative;z-index:1;animation:up .5s ease}
+    @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px}
+    .logo span{color:var(--accent)}
+    .badge{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);color:var(--accent);font-size:11px;padding:3px 10px;border-radius:20px}
+
+    .stitle{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+    /* ── Mode selector ── */
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+    .mode-tab{padding:11px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;text-align:center}
+    .mode-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+    .mode-tab:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* ── Live Camera Panel ── */
+    .panel{display:none}
+    .panel.show{display:block}
+
+    .cam-box{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;border:2px solid var(--border);margin-bottom:12px;transition:border-color .3s,box-shadow .3s}
+    .cam-box.on{border-color:var(--accent);box-shadow:0 0 24px rgba(0,229,160,.2)}
+    #video{width:100%;display:block;max-height:260px;object-fit:cover}
+    #canvas{display:none}
+    .idle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 20px;color:var(--muted);background:var(--surface)}
+    .idle svg{opacity:.35;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+    .idle p{font-size:13px;text-align:center;line-height:1.6}
+    .scan-ui{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+    .scan-ui.on{display:flex}
+    .frame{width:72%;aspect-ratio:2.5/1;position:relative}
+    .frame::before,.frame::after,.frame .br,.frame .bl{content:'';position:absolute;width:22px;height:22px;border-color:var(--accent);border-style:solid}
+    .frame::before{top:0;left:0;border-width:3px 0 0 3px}
+    .frame::after{top:0;right:0;border-width:3px 3px 0 0}
+    .frame .br{bottom:0;right:0;border-width:0 3px 3px 0}
+    .frame .bl{bottom:0;left:0;border-width:0 0 3px 3px}
+    .sline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sl 1.6s ease-in-out infinite}
+    @keyframes sl{0%{top:0;opacity:1}100%{top:100%;opacity:.1}}
+    .pill{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);backdrop-filter:blur(4px);color:var(--accent);font-size:12px;padding:4px 14px;border-radius:20px;display:none;white-space:nowrap}
+    .pill.on{display:block}
+
+    /* ── Photo Capture Panel ── */
+    .photo-panel{text-align:center}
+    .photo-area{border:2px dashed var(--border);border-radius:16px;padding:32px 20px;margin-bottom:12px;transition:border-color .3s;cursor:pointer;background:var(--surface)}
+    .photo-area:hover{border-color:var(--accent)}
+    .photo-area.has-img{border-style:solid;border-color:var(--accent);padding:0;overflow:hidden}
+    #capturedImg{width:100%;border-radius:14px;display:none}
+    .photo-icon{font-size:48px;margin-bottom:10px;animation:float 3s ease-in-out infinite}
+    .photo-label{font-size:13px;color:var(--muted);line-height:1.6}
+    .photo-label strong{color:var(--accent)}
+    /* Hidden file input */
+    #photoInput{display:none}
+
+    /* ── Buttons ── */
+    .btn{width:100%;padding:14px;background:var(--accent);color:#0d1117;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+    .btn:hover{background:#00ffb3;transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,229,160,.35)}
+    .btn:active{transform:translateY(0)}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-outline{width:100%;padding:13px;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:12px}
+    .btn-outline:hover{background:rgba(255,107,107,.08)}
+    .btn-photo{width:100%;padding:14px;background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.3);border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+    .btn-photo:hover{background:rgba(0,229,160,.2);transform:translateY(-2px)}
+
+    /* ── Manual ── */
+    .mrow{display:flex;gap:8px;margin-bottom:8px}
+    .mrow input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;transition:all .2s}
+    .mrow input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.08)}
+    .mrow input::placeholder{color:var(--muted)}
+    .mrow button{padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--accent);font-size:18px;cursor:pointer;transition:all .2s}
+    .mrow button:hover{border-color:var(--accent);transform:scale(1.05)}
+    .hint{font-size:12px;color:var(--muted);margin-bottom:18px;text-align:center;line-height:1.5}
+
+    /* ── DB tags ── */
+    .dbtags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+    .dbt{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--muted);transition:all .3s}
+    .dbt.hit{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08);animation:pop .3s ease}
+    .dbt.searching{border-color:var(--warn);color:var(--warn);animation:blink .8s infinite}
+    @keyframes pop{0%{transform:scale(.9)}50%{transform:scale(1.07)}100%{transform:scale(1)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+    .sbar{display:none;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--accent);margin-bottom:12px;text-align:center;animation:up .3s ease}
+    .sbar.on{display:block}
+
+    /* ── Add card ── */
+    .add-card{background:var(--card);border:1px solid var(--warn);border-radius:14px;padding:18px;margin-bottom:20px;display:none;animation:up .3s ease}
+    .add-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--warn);margin-bottom:14px}
+    .fg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .fg.full{grid-template-columns:1fr}
+    .ff label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+    .ff input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-size:13px;outline:none}
+    .ff input:focus{border-color:var(--warn)}
+    .ff input::placeholder{color:var(--muted);font-size:12px}
+    .save-btn{width:100%;padding:11px;background:rgba(240,160,75,.15);color:var(--warn);border:1px solid rgba(240,160,75,.4);border-radius:10px;font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;margin-top:4px;transition:all .2s}
+    .save-btn:hover{background:rgba(240,160,75,.25)}
+
+    /* ── Result card ── */
+    .result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:24px;display:none}
+    .result-card.on{display:block;animation:bounce .4s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes bounce{0%{opacity:0;transform:scale(.92) translateY(16px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+    .rh{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+    .ricon{width:54px;height:54px;border-radius:14px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+    .rname{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:3px}
+    .rbrand{font-size:12px;color:var(--muted)}
+    .rsrc{font-size:10px;color:var(--accent);margin-top:3px;font-weight:500}
+    .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+    .m{background:var(--surface);border-radius:10px;padding:10px 8px;text-align:center;transition:transform .15s}
+    .m:hover{transform:scale(1.04)}
+    .mv{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:2px}
+    .mv.c{color:var(--accent)}.mv.p{color:var(--accent2)}.mv.cb{color:var(--warn)}.mv.f{color:var(--danger)}
+    .mv.bump{animation:vbump .25s ease}
+    @keyframes vbump{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+    .ml{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .nonut{background:rgba(240,160,75,.08);border:1px solid rgba(240,160,75,.2);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--warn);margin-bottom:12px}
+    .srvrow{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:12px;padding:12px 16px;margin-bottom:12px;border:1px solid var(--border)}
+    .srvlabel{font-size:13px;color:var(--muted)}
+    .srvc{display:flex;align-items:center;gap:14px}
+    .sbtn{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
+    .sbtn.minus:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,107,107,.08)}
+    .sbtn.plus:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,160,.08)}
+    .sbtn:active{transform:scale(.9)}
+    #sc{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;min-width:32px;text-align:center;transition:color .2s}
+    #sc.bump{animation:vbump .25s ease}
+    .logbtn{width:100%;padding:13px;background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.3);border-radius:10px;font-family:'Syne',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s}
+    .logbtn:hover{background:rgba(0,229,160,.2);box-shadow:0 0 16px rgba(0,229,160,.2);transform:translateY(-1px)}
+
+    /* ── Summary ── */
+    .summary{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:24px}
+    .sum-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .sum-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .sum-right{display:flex;align-items:center;gap:8px}
+    .sum-cal{font-family:'Syne',sans-serif;font-weight:800;font-size:22px}
+    .sum-cal small{font-size:12px;font-weight:400;color:var(--muted)}
+    .gbtn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s}
+    .gbtn:hover{border-color:var(--accent);color:var(--accent)}
+    .ged{display:none;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:12px;margin-bottom:10px}
+    .ged.on{display:flex;gap:8px;align-items:center;animation:up .25s ease}
+    .ged label{font-size:12px;color:var(--muted);white-space:nowrap}
+    .ged input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px;font-family:'Syne',sans-serif;font-weight:700;outline:none}
+    .ged input:focus{border-color:var(--accent)}
+    .ged button{padding:8px 14px;background:var(--accent);color:#0d1117;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer}
+    .ged button:hover{background:#00ffb3}
+    .prog{height:8px;background:var(--surface);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .6s cubic-bezier(.34,1.2,.64,1)}
+    .prog-fill.over{background:linear-gradient(90deg,var(--danger),#f44)}
+
+    /* ── Log list ── */
+    .loglist{display:flex;flex-direction:column;gap:8px}
+    .litem{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;animation:slin .35s cubic-bezier(.34,1.4,.64,1)}
+    @keyframes slin{from{opacity:0;transform:translateX(-14px) scale(.97)}to{opacity:1;transform:translateX(0) scale(1)}}
+    .ll{display:flex;align-items:center;gap:10px}
+    .lem{font-size:22px}
+    .lname{font-size:13px;font-weight:500}
+    .lmeta{font-size:11px;color:var(--muted)}
+    .lr{display:flex;align-items:center;gap:8px}
+    .lcal{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:14px}
+    .delbtn{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 5px;border-radius:4px;transition:all .15s}
+    .delbtn:hover{color:var(--danger);transform:scale(1.2)}
+    .empty{text-align:center;padding:32px 0;color:var(--muted);font-size:13px}
+    .empty .ei{font-size:40px;margin-bottom:8px;opacity:.35;animation:float 3s ease-in-out infinite}
+
+    .err{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:var(--danger);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none;white-space:pre-line;line-height:1.6}
+    .err.on{display:block;animation:up .3s ease}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--accent);color:#0d1117;padding:11px 22px;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;transition:transform .35s cubic-bezier(.34,1.4,.64,1);z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,229,160,.4)}
+    .toast.on{transform:translateX(-50%) translateY(0)}
+    .toast.w{background:var(--warn);box-shadow:0 4px 20px rgba(240,160,75,.4)}
+    .confwrap{position:fixed;inset:0;pointer-events:none;z-index:998;overflow:hidden}
+    .cp{position:absolute;border-radius:2px;animation:cfall linear forwards}
+    @keyframes cfall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Diet<span>Ease</span>+</div>
+    <div class="badge">BARCODE SCANNER</div>
+  </header>
+
+  <div class="stitle"><div class="dot"></div>Scan Food Barcode</div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" id="tab-live" onclick="setMode('live')">📷 Live Camera</div>
+    <div class="mode-tab" id="tab-photo" onclick="setMode('photo')">🖼️ Take Photo</div>
+  </div>
+
+  <!-- ── LIVE CAMERA PANEL ── -->
+  <div class="panel show" id="panel-live">
+    <div class="cam-box" id="camBox">
+      <div class="idle" id="idle">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M3 9V6a2 2 0 012-2h3M15 4h3a2 2 0 012 2v3M21 15v3a2 2 0 01-2 2h-3M9 20H6a2 2 0 01-2-2v-3"/>
+          <rect x="7" y="9" width="2" height="6" rx=".5"/><rect x="11" y="9" width="1" height="6" rx=".5"/><rect x="14" y="9" width="3" height="6" rx=".5"/>
+        </svg>
+        <p>Tap <strong style="color:var(--accent)">Start Camera</strong> below<br/>Works best when opened via <strong style="color:var(--accent)">HTTPS link</strong></p>
+      </div>
+      <video id="video" autoplay muted playsinline style="display:none"></video>
+      <canvas id="canvas" style="display:none"></canvas>
+      <div class="scan-ui" id="scanUI">
+        <div class="frame"><div class="sline"></div><div class="br"></div><div class="bl"></div></div>
+      </div>
+      <div class="pill" id="pill">🔍 Scanning for barcode…</div>
+    </div>
+    <div class="btn" id="startBtn" onclick="startCam()" style="cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+      Start Camera
+    </div>
+    <button class="btn-outline" id="stopBtn" style="display:none" onclick="stopCam()">⏹ Stop Camera</button>
+  </div>
+
+  <!-- ── PHOTO CAPTURE PANEL ── -->
+  <div class="panel" id="panel-photo">
+    <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+      <div id="photoPlaceholder">
+        <div class="photo-icon">📸</div>
+        <div class="photo-label">Tap here to <strong>open camera</strong> and take a photo of the barcode.<br/><br/>Works on <strong>any Android browser</strong> without HTTPS!</div>
+      </div>
+      <img id="capturedImg" src="" alt="captured"/>
+    </div>
+    <!-- This is the key: capture="environment" forces back camera, works on file:// -->
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(event)"/>
+    <button class="btn-photo" onclick="document.getElementById('photoInput').click()">
+      📷 Open Camera & Take Photo
+    </button>
+    <div class="hint" style="margin-top:4px">📌 Take a clear photo of the barcode · flat surface · good light</div>
+  </div>
+
+  <!-- Manual entry (always visible) -->
+  <div class="mrow">
+    <input type="text" id="manualInput" placeholder="Type barcode manually… (e.g. 8901030810054)" maxlength="14"/>
+    <button onclick="manualLookup()">🔍</button>
+  </div>
+  <p class="hint">Tip: If camera scan fails, type the barcode numbers printed under the barcode</p>
+
+  <!-- DB tags -->
+  <div class="dbtags">
+    <span class="dbt" id="t1">🌍 OFF Global</span>
+    <span class="dbt" id="t2">🇮🇳 OFF India</span>
+    <span class="dbt" id="t3">🇺🇸 UPC DB</span>
+    <span class="dbt" id="t4">🇪🇺 OFF EU</span>
+    <span class="dbt" id="t5">⚡ Built-in</span>
+    <span class="dbt" id="t6">✍️ Manual</span>
+  </div>
+
+  <div class="sbar" id="sbar">Searching databases…</div>
+  <div class="err" id="err"></div>
+
+  <!-- Manual add card -->
+  <div class="add-card" id="addCard">
+    <div class="add-title">⚠️ Product not found — enter details manually</div>
+    <div class="fg full"><div class="ff"><label>Product Name *</label><input id="maName" type="text" placeholder="e.g. Parle-G Biscuit"/></div></div>
+    <div class="fg">
+      <div class="ff"><label>Brand</label><input id="maBrand" type="text" placeholder="e.g. Parle"/></div>
+      <div class="ff"><label>Calories/100g</label><input id="maCal" type="number" placeholder="450"/></div>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Protein g</label><input id="maProt" type="number" placeholder="0"/></div>
+      <div class="ff"><label>Carbs g</label><input id="maCarb" type="number" placeholder="0"/></div>
+    </div>
+    <div class="fg">
+      <div class="ff"><label>Fat g</label><input id="maFat" type="number" placeholder="0"/></div>
+      <div class="ff"><label>Barcode</label><input id="maBarcode" type="text" readonly/></div>
+    </div>
+    <button class="save-btn" onclick="saveManual()">✅ Save & Log</button>
+  </div>
+
+  <!-- Result card -->
+  <div class="result-card" id="resultCard">
+    <div class="rh">
+      <div class="ricon" id="rIcon">🥗</div>
+      <div>
+        <div class="rname" id="rName">—</div>
+        <div class="rbrand" id="rBrand">—</div>
+        <div class="rsrc" id="rSrc">—</div>
+      </div>
+    </div>
+    <div class="nonut" id="noNut" style="display:none">⚠️ Nutrition data unavailable — calories logged as 0.</div>
+    <div class="macros">
+      <div class="m"><div class="mv c" id="rCal">—</div><div class="ml">kcal</div></div>
+      <div class="m"><div class="mv p" id="rProt">—</div><div class="ml">protein</div></div>
+      <div class="m"><div class="mv cb" id="rCarb">—</div><div class="ml">carbs</div></div>
+      <div class="m"><div class="mv f" id="rFat">—</div><div class="ml">fat</div></div>
+    </div>
+    <div class="srvrow">
+      <span class="srvlabel">Servings (×100g)</span>
+      <div class="srvc">
+        <button class="sbtn minus" onclick="srv(-1)">−</button>
+        <span id="sc">1</span>
+        <button class="sbtn plus" onclick="srv(1)">+</button>
+      </div>
+    </div>
+    <button class="logbtn" onclick="logFood()">＋ Log This Food</button>
+  </div>
+
+  <!-- Today's log -->
+  <div class="stitle" style="margin-top:8px">
+    <div class="dot" style="background:var(--accent2);box-shadow:0 0 8px var(--accent2)"></div>
+    Today's Log
+  </div>
+  <div class="summary">
+    <div class="sum-top">
+      <span class="sum-label">Calories Consumed</span>
+      <div class="sum-right">
+        <span class="sum-cal"><span id="totalCal">0</span><small> / <span id="goalDisp">2000</span> kcal</small></span>
+        <button class="gbtn" onclick="toggleGoal()">✏️ Goal</button>
+      </div>
+    </div>
+    <div class="ged" id="ged">
+      <label>Daily Goal:</label>
+      <input type="number" id="goalInput" placeholder="2000" min="100" max="9999"/>
+      <button onclick="saveGoal()">Save</button>
+    </div>
+    <div class="prog"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="loglist" id="logList">
+    <div class="empty"><div class="ei">🍽️</div><p>No foods logged yet</p></div>
+  </div>
+</div>
+
+<div class="confwrap" id="confwrap"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── State ── */
+let dailyGoal = parseInt(localStorage.getItem('de_goal')) || 2000;
+let foodLog=[], current=null, servings=1;
+let stream=null, rafId=null, detecting=false;
+
+document.getElementById('goalDisp').textContent = dailyGoal;
+document.getElementById('goalInput').value      = dailyGoal;
+
+/* ── Mode tabs ── */
+function setMode(m) {
+  document.getElementById('tab-live').classList.toggle('active', m==='live');
+  document.getElementById('tab-photo').classList.toggle('active', m==='photo');
+  document.getElementById('panel-live').classList.toggle('show', m==='live');
+  document.getElementById('panel-photo').classList.toggle('show', m==='photo');
+  if (m==='live' && stream) stopCam();
+}
+
+/* ── Emoji ── */
+const EM={beverage:'🥤',drink:'🥤',water:'💧',juice:'🍹',cola:'🥤',soda:'🥤',milk:'🥛',cheese:'🧀',yogurt:'🥣',bread:'🍞',rice:'🍚',pasta:'🍝',cereal:'🥣',chip:'🥔',snack:'🍟',cookie:'🍪',candy:'🍬',chocolate:'🍫',biscuit:'🍪',cracker:'🫙',fruit:'🍎',apple:'🍎',banana:'🍌',orange:'🍊',salad:'🥗',meat:'🥩',chicken:'🍗',fish:'🐟',tuna:'🐟',egg:'🥚',sauce:'🫙',soup:'🍲',coffee:'☕',tea:'🍵',protein:'💪',bar:'🍫',nuts:'🥜',peanut:'🥜',oat:'🥣',granola:'🥣',ice:'🍦',cake:'🎂',pizza:'🍕',burger:'🍔',noodle:'🍜',corn:'🌽',butter:'🧈',ghee:'🫙'};
+function emo(n=''){const l=n.toLowerCase();for(const[k,e]of Object.entries(EM))if(l.includes(k))return e;return'🥗';}
+
+/* ── Built-in DB ── */
+const BUILTIN={
+  '8901719100018':{name:'Parle-G Biscuits',brand:'Parle',calories:450,protein:6.7,carbs:76,fat:11.7},
+  '8901719110017':{name:'Parle Hide & Seek',brand:'Parle',calories:496,protein:6.2,carbs:66,fat:23},
+  '8901030810054':{name:'Parle-G Gold',brand:'Parle',calories:450,protein:6.7,carbs:76,fat:11.7},
+  '8901063032019':{name:'Britannia Good Day',brand:'Britannia',calories:503,protein:7,carbs:64,fat:24},
+  '8901063030015':{name:'Britannia Marie Gold',brand:'Britannia',calories:416,protein:8,carbs:74,fat:9},
+  '8901058851336':{name:'Maggi 2-Min Noodles',brand:'Nestlé',calories:375,protein:9.4,carbs:57,fat:12.2},
+  '8901088002230':{name:'Amul Butter',brand:'Amul',calories:720,protein:0.5,carbs:0,fat:80},
+  '8901088000885':{name:'Amul Taaza Milk',brand:'Amul',calories:58,protein:3.2,carbs:4.8,fat:3},
+  '8901088012007':{name:'Amul Cheese Slice',brand:'Amul',calories:300,protein:18,carbs:4,fat:24},
+  '8902045000018':{name:'Haldirams Bhujia',brand:'Haldirams',calories:536,protein:12,carbs:56,fat:28},
+  '8901491502759':{name:"Lay's Classic Salted",brand:"Lay's",calories:536,protein:6.2,carbs:52.3,fat:34},
+  '8901491107474':{name:"Lay's Magic Masala",brand:"Lay's",calories:547,protein:6.4,carbs:54,fat:33},
+  '8901491100109':{name:'Kurkure Masala Munch',brand:'PepsiCo',calories:537,protein:6.7,carbs:58,fat:30},
+  '8904004400019':{name:'Sunfeast Dark Fantasy',brand:'ITC',calories:517,protein:6.5,carbs:64,fat:26},
+  '8901499000018':{name:"Kellogg's Cornflakes",brand:"Kellogg's",calories:357,protein:8,carbs:79,fat:1},
+  '7622210449283':{name:'Cadbury Dairy Milk',brand:'Cadbury',calories:534,protein:7.7,carbs:57.6,fat:29.7},
+  '7622210979063':{name:'Cadbury 5 Star',brand:'Cadbury',calories:462,protein:4,carbs:70,fat:18},
+  '8901058501203':{name:'KitKat 4 Finger',brand:'Nestlé',calories:518,protein:6.3,carbs:63,fat:27},
+  '8901552004123':{name:'Coca-Cola 250ml',brand:'Coca-Cola',calories:44,protein:0,carbs:11,fat:0},
+  '8901012000016':{name:'Pepsi 250ml',brand:'PepsiCo',calories:42,protein:0,carbs:10.6,fat:0},
+  '049000050103' :{name:'Coca-Cola Classic',brand:'Coca-Cola',calories:42,protein:0,carbs:10.6,fat:0},
+  '038000845321' :{name:"Kellogg's Corn Flakes",brand:"Kellogg's",calories:357,protein:8,carbs:79,fat:.5},
+  '037600164801' :{name:'Oreo Cookies',brand:'Nabisco',calories:471,protein:5,carbs:70,fat:20},
+};
+
+/* ══════════════════════════════════
+   PHOTO MODE — works on file:// !!
+   Uses <input capture> + BarcodeDetector on image
+══════════════════════════════════ */
+async function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Show preview
+  const img = document.getElementById('capturedImg');
+  const url = URL.createObjectURL(file);
+  img.src = url;
+  img.style.display = 'block';
+  document.getElementById('photoPlaceholder').style.display = 'none';
+  document.getElementById('photoArea').classList.add('has-img');
+
+  showErr('');
+  showSbar('🔍 Reading barcode from photo…');
+
+  try {
+    // Method 1: Native BarcodeDetector on image element (works on Android Chrome)
+    if ('BarcodeDetector' in window) {
+      await img.decode();
+      const detector = new BarcodeDetector({
+        formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']
+      });
+      const results = await detector.detect(img);
+      if (results && results.length > 0) {
+        hideSbar();
+        lookupBarcode(results[0].rawValue);
+        return;
+      }
+    }
+
+    // Method 2: Draw to canvas and use ZXing
+    const bmp = await createImageBitmap(file);
+    const cv  = document.createElement('canvas');
+    cv.width  = bmp.width;
+    cv.height = bmp.height;
+    cv.getContext('2d').drawImage(bmp, 0, 0);
+
+    // Load ZXing dynamically
+    if (!window.ZXing) {
+      await loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js');
+    }
+    const reader = new ZXing.BrowserMultiFormatReader();
+    const result = await reader.decodeFromCanvas(cv);
+    hideSbar();
+    if (result) { lookupBarcode(result.getText()); return; }
+
+    hideSbar();
+    showErr('❌ Could not read barcode from this photo.\n👉 Try again with better lighting and hold camera closer to barcode.\n👉 Or type the barcode number manually below.');
+  } catch(err) {
+    hideSbar();
+    if (err && err.name === 'NotFoundException') {
+      showErr('❌ No barcode found in photo.\n👉 Make sure the full barcode is visible and in focus.\n👉 Or type the barcode number printed under it manually.');
+    } else {
+      showErr('❌ Error reading photo. Please type the barcode number manually.');
+    }
+  }
+
+  // Reset file input so same file can be selected again
+  e.target.value = '';
+}
+
+/* ══════════════════════════════════
+   LIVE CAMERA MODE
+══════════════════════════════════ */
+async function startCam() {
+  showErr('');
+  const btn = document.getElementById('startBtn');
+  btn.style.opacity = '.5';
+  btn.style.pointerEvents = 'none';
+  btn.innerHTML = '⏳ Starting camera…';
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
+      audio:false
+    });
+    const v = document.getElementById('video');
+    v.srcObject = stream;
+    await v.play();
+
+    document.getElementById('idle').style.display = 'none';
+    v.style.display = 'block';
+    document.getElementById('scanUI').classList.add('on');
+    document.getElementById('pill').classList.add('on');
+    document.getElementById('camBox').classList.add('on');
+    btn.style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'block';
+    detecting = false;
+
+    // Use BarcodeDetector if available (Android Chrome)
+    if ('BarcodeDetector' in window) {
+      const det = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code']});
+      const loop = async () => {
+        if (!stream||detecting) return;
+        try {
+          const res = await det.detect(v);
+          if (res&&res.length>0){onDetected(res[0].rawValue);return;}
+        } catch(_){}
+        rafId = requestAnimationFrame(loop);
+      };
+      loop();
+    } else {
+      // Fallback: ZXing
+      if (!window.ZXing) await loadScript('https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js');
+      const cv = document.getElementById('canvas');
+      const tick = () => {
+        if (!stream||detecting) return;
+        if (v.readyState >= 2) {
+          cv.width=v.videoWidth; cv.height=v.videoHeight;
+          cv.getContext('2d').drawImage(v,0,0);
+          try {
+            const lum = new ZXing.HTMLCanvasElementLuminanceSource(cv);
+            const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum));
+            const res = new ZXing.MultiFormatReader().decode(bmp);
+            if (res){onDetected(res.getText());return;}
+          } catch(_){}
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      tick();
+    }
+  } catch(e) {
+    let msg='❌ Camera error.\n';
+    if (/NotAllowed|Permission/i.test(e.message)) msg+='Permission denied — allow camera in Chrome settings.\n\n👉 Try the "Take Photo" tab instead — it works without permissions!';
+    else msg+=e.message+'\n\n👉 Try the "Take Photo" tab instead!';
+    showErr(msg);
+  }
+
+  btn.style.opacity='1'; btn.style.pointerEvents='auto';
+  btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg> Start Camera`;
+  btn.style.display = stream ? 'none' : 'flex';
+}
+
+function onDetected(code) {
+  if (!code||detecting) return;
+  detecting=true; stopCam(); lookupBarcode(code);
+}
+
+function stopCam() {
+  if (rafId){cancelAnimationFrame(rafId);rafId=null;}
+  if (stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  detecting=false;
+  const v=document.getElementById('video');
+  v.srcObject=null; v.style.display='none';
+  document.getElementById('idle').style.display='flex';
+  document.getElementById('scanUI').classList.remove('on');
+  document.getElementById('pill').classList.remove('on');
+  document.getElementById('camBox').classList.remove('on');
+  document.getElementById('startBtn').style.display='flex';
+  document.getElementById('stopBtn').style.display='none';
+}
+
+/* ── Load script helper ── */
+function loadScript(src) {
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+/* ── Manual lookup ── */
+function manualLookup() {
+  const code=document.getElementById('manualInput').value.trim().replace(/\s/g,'');
+  if (!code){showErr('Please enter a barcode.');return;}
+  lookupBarcode(code);
+}
+
+/* ── Multi-DB lookup ── */
+async function lookupBarcode(code) {
+  showErr('');
+  document.getElementById('addCard').style.display='none';
+  document.getElementById('resultCard').classList.remove('on');
+  ['t1','t2','t3','t4','t5','t6'].forEach(id=>tag(id,''));
+  ['t1','t2','t3','t4'].forEach(id=>tag(id,'searching'));
+  showSbar(`🔍 Searching for: ${code}`);
+
+  // Built-in instant check
+  if (BUILTIN[code]) {
+    hideSbar(); tag('t5','hit');
+    setCurrent({...BUILTIN[code],barcode:code,source:'⚡ Built-in DB'});
+    return;
+  }
+
+  const [r1,r2,r3,r4]=await Promise.allSettled([
+    dbOFF('world',code), dbOFF('in',code), dbUPC(code), dbOFF('fr',code)
+  ]);
+  hideSbar();
+  if(r1.value)tag('t1','hit'); if(r2.value)tag('t2','hit');
+  if(r3.value)tag('t3','hit'); if(r4.value)tag('t4','hit');
+
+  const all=[r1,r2,r3,r4].map(r=>r.value).filter(Boolean);
+  const best=all.find(f=>f.calories>0)||all[0]||null;
+  if(best){setCurrent(best);}
+  else{
+    showErr(`❌ Barcode "${code}" not found in any database.\nFill in the product details below 👇`);
+    openAdd(code); tag('t6','searching');
+  }
+}
+
+async function dbOFF(region,code){
+  try{
+    const r=await fetch(`https://${region}.openfoodfacts.org/api/v0/product/${code}.json`);
+    const d=await r.json();
+    if(d.status===0||!d.product)return null;
+    const p=d.product,n=p.nutriments||{};
+    const name=p.product_name||p.product_name_en||p.product_name_fr||p.generic_name||'';
+    if(!name)return null;
+    const sm={world:'🌍 Open Food Facts',in:'🇮🇳 OFF India',fr:'🇪🇺 OFF Europe'};
+    return{name,brand:p.brands||'',barcode:code,
+      calories:Math.round(n['energy-kcal_100g']||(n['energy_100g']||0)/4.184),
+      protein:+(n['proteins_100g']||0).toFixed(1),
+      carbs:+(n['carbohydrates_100g']||0).toFixed(1),
+      fat:+(n['fat_100g']||0).toFixed(1),
+      source:`✅ ${sm[region]||'OFF'}`};
+  }catch{return null;}
+}
+
+async function dbUPC(code){
+  try{
+    const r=await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${code}`);
+    const d=await r.json();
+    if(!d.items||!d.items[0]||!d.items[0].title)return null;
+    return{name:d.items[0].title,brand:d.items[0].brand||'',barcode:code,
+      calories:0,protein:0,carbs:0,fat:0,source:'✅ UPC Item DB',noNutrition:true};
+  }catch{return null;}
+}
+
+/* ── Result ── */
+function setCurrent(food){
+  current=food; servings=1;
+  document.getElementById('rName').textContent=food.name||'Unknown';
+  document.getElementById('rBrand').textContent=food.brand||'';
+  document.getElementById('rSrc').textContent=food.source||'';
+  document.getElementById('rIcon').textContent=emo(food.name);
+  document.getElementById('noNut').style.display=food.noNutrition?'block':'none';
+  updateMacros(false);
+  document.getElementById('resultCard').classList.add('on');
+}
+function updateMacros(bump){
+  const s=servings;
+  [['rCal',Math.round(current.calories*s)],['rProt',(current.protein*s).toFixed(1)+'g'],
+   ['rCarb',(current.carbs*s).toFixed(1)+'g'],['rFat',(current.fat*s).toFixed(1)+'g']]
+  .forEach(([id,val])=>{
+    const el=document.getElementById(id); el.textContent=val;
+    if(bump){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
+  });
+  const sc=document.getElementById('sc');
+  sc.textContent=servings%1===0?servings:servings.toFixed(1);
+  if(bump){sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');}
+}
+function srv(d){
+  const n=Math.round((servings+d*.5)*10)/10;
+  if(n<.5){const sc=document.getElementById('sc');sc.style.color='var(--danger)';setTimeout(()=>sc.style.color='',500);return;}
+  servings=n; updateMacros(true);
+}
+function logFood(){
+  if(!current)return;
+  const e={...current,loggedCal:Math.round(current.calories*servings),loggedSrv:servings,
+    time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),id:Date.now()};
+  foodLog.unshift(e); renderLog();
+  toast(`✅ ${e.name} logged!`); confetti();
+  document.getElementById('resultCard').classList.remove('on');
+  current=null; servings=1;
+  ['t1','t2','t3','t4','t5','t6'].forEach(id=>tag(id,''));
+}
+function delEntry(id){foodLog=foodLog.filter(e=>e.id!==id);renderLog();toast('🗑️ Removed',true);}
+function renderLog(){
+  const total=foodLog.reduce((s,e)=>s+e.loggedCal,0);
+  document.getElementById('totalCal').textContent=total;
+  const pct=Math.min(100,(total/dailyGoal)*100);
+  const fill=document.getElementById('progFill');
+  fill.style.width=pct+'%'; fill.className='prog-fill'+(total>dailyGoal?' over':'');
+  const list=document.getElementById('logList');
+  if(!foodLog.length){list.innerHTML='<div class="empty"><div class="ei">🍽️</div><p>No foods logged yet</p></div>';return;}
+  list.innerHTML=foodLog.map(e=>`
+    <div class="litem">
+      <div class="ll"><div class="lem">${emo(e.name)}</div>
+        <div><div class="lname">${e.name}</div><div class="lmeta">${e.loggedSrv}× · ${e.time} · ${e.source}</div></div>
+      </div>
+      <div class="lr"><div class="lcal">${e.loggedCal} kcal</div>
+        <button class="delbtn" onclick="delEntry(${e.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Manual add ── */
+function openAdd(code){
+  document.getElementById('addCard').style.display='block';
+  document.getElementById('maBarcode').value=code;
+  ['maName','maBrand','maCal','maProt','maCarb','maFat'].forEach(id=>document.getElementById(id).value='');
+}
+function saveManual(){
+  const name=document.getElementById('maName').value.trim();
+  if(!name){showErr('Please enter the product name.');return;}
+  setCurrent({name,brand:document.getElementById('maBrand').value.trim(),
+    barcode:document.getElementById('maBarcode').value,
+    calories:parseFloat(document.getElementById('maCal').value)||0,
+    protein:parseFloat(document.getElementById('maProt').value)||0,
+    carbs:parseFloat(document.getElementById('maCarb').value)||0,
+    fat:parseFloat(document.getElementById('maFat').value)||0,source:'✍️ Manual Entry'});
+  document.getElementById('addCard').style.display='none';
+  tag('t6','hit'); showErr('');
+}
+
+/* ── Goal ── */
+function toggleGoal(){const ed=document.getElementById('ged');ed.classList.toggle('on');if(ed.classList.contains('on'))document.getElementById('goalInput').focus();}
+function saveGoal(){
+  const v=parseInt(document.getElementById('goalInput').value);
+  if(!v||v<100){toast('Enter a valid goal',true);return;}
+  dailyGoal=v; localStorage.setItem('de_goal',v);
+  document.getElementById('goalDisp').textContent=v;
+  document.getElementById('ged').classList.remove('on');
+  renderLog(); toast(`🎯 Goal set to ${v} kcal!`);
+}
+
+/* ── Helpers ── */
+function tag(id,s){const el=document.getElementById(id);if(el)el.className='dbt'+(s?' '+s:'');}
+function showErr(msg){const el=document.getElementById('err');el.textContent=msg;el.className='err'+(msg?' on':'');}
+function showSbar(msg){const sb=document.getElementById('sbar');sb.textContent=msg;sb.classList.add('on');}
+function hideSbar(){document.getElementById('sbar').classList.remove('on');}
+let _tt;
+function toast(msg,w=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(w?' w':'');
+  t.classList.add('on'); clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('on'),2500);
+}
+function confetti(){
+  const wrap=document.getElementById('confwrap');
+  const cols=['#00e5a0','#00b8d4','#f0a04b','#ff6b6b','#fff'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div'); p.className='cp';
+    const sz=6+Math.random()*7;
+    p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${.9+Math.random()*1.1}s;animation-delay:${Math.random()*.3}s;`;
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2200);
+  }
+}
+document.getElementById('manualInput').addEventListener('keydown',e=>{if(e.key==='Enter')manualLookup();});
+document.getElementById('goalInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveGoal();});
+</script>
+</body>
+</html>
