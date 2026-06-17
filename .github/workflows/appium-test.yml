@@ -1,4 +1,4 @@
-name: Appium Android E2E Tests
+name: DietEase APP Tests
 
 on:
   push:
@@ -58,6 +58,6 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: appium-test-report
+        name: DietEase-APP-Test-Report
         path: dietease-android-app/appium-tests/reports/*.xlsx
         retention-days: 7
