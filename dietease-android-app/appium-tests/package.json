@@ -1,0 +1,13 @@
+{
+  "name": "dietease-appium-tests",
+  "version": "1.0.0",
+  "description": "End-to-end Appium tests for DietEase+ Android App with Excel reporting",
+  "main": "run-tests.js",
+  "scripts": {
+    "test": "node run-tests.js"
+  },
+  "dependencies": {
+    "webdriverio": "^8.41.0",
+    "exceljs": "^4.4.0"
+  }
+}

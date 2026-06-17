@@ -1,0 +1,63 @@
+name: Appium Android E2E Tests
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: macos-13
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      working-directory: dietease-android-app/appium-tests
+      run: npm install
+
+    - name: Install Appium drivers
+      run: |
+        npx appium driver install uiautomator2
+      working-directory: dietease-android-app/appium-tests
+
+    - name: Build Debug APK
+      working-directory: dietease-android-app
+      run: |
+        chmod +x ./gradlew
+        ./gradlew assembleDebug
+
+    - name: Run Appium Tests on Emulator
+      uses: ReactiveCircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        profile: Nexus 6
+        script: |
+          cd dietease-android-app/appium-tests
+          node run-tests.js
+      env:
+        DEVICE_NAME: emulator-5554
+        DEVICE_UDID: emulator-5554
+
+    - name: Upload Excel Report Artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: appium-test-report
+        path: dietease-android-app/appium-tests/reports/*.xlsx
+        retention-days: 7
