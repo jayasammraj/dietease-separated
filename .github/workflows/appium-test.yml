@@ -39,7 +39,7 @@ jobs:
 
     - name: Install Appium drivers
       run: |
-        npx appium driver install uiautomator2@2
+        npx appium driver install uiautomator2@2 || true
       working-directory: dietease-android-app/appium-tests
 
     - name: Build Debug APK
