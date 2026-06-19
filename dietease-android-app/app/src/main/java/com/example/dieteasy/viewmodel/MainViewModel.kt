@@ -114,7 +114,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _servings.value           = 1f
         _showManualEntry.value    = false
         viewModelScope.launch(Dispatchers.IO) {
-            val result = repo.lookupBarcode(barcode)
+            val result = try {
+                kotlinx.coroutines.withTimeout(1500) {
+                    repo.lookupBarcode(barcode)
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
             _lookupState.value = if (result.isSuccess) {
                 LookupState.Success(result.getOrThrow())
             } else {

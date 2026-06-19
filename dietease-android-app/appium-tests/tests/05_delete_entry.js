@@ -157,7 +157,7 @@ module.exports = async function runTests(driver) {
   try {
     await clickTab(driver, 'today');
     const delBtns = await driver.$$('~Delete');
-    if (delBtns.length >= 1) {
+    if (delBtns.length > 1) {
       await delBtns[0].click();
       await driver.pause(800);
     }

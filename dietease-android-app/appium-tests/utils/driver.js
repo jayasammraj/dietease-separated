@@ -44,10 +44,22 @@ async function buildDriver() {
   // Overwrite clearValue to ensure fields are fully cleared in Jetpack Compose
   driver.overwriteCommand('clearValue', async function (origClearValue) {
     try {
+      // First try to find a Clear button globally on the screen (which works for search fields)
+      const clearBtn = await driver.$('~Clear');
+      if (await clearBtn.isExisting() && await clearBtn.isDisplayed()) {
+        await clearBtn.click();
+        await driver.pause(200);
+        return;
+      }
+    } catch (_) {}
+
+    try {
       await this.click();
       await origClearValue();
-      // Send 20 backspaces to ensure Compose clears its state
-      for (let i = 0; i < 20; i++) {
+      await driver.pressKeyCode(123); // Move cursor to end (KEYCODE_MOVE_END)
+      await driver.pause(100);
+      // Send 30 backspaces to ensure Compose clears its state
+      for (let i = 0; i < 30; i++) {
         await driver.pressKeyCode(67); // Backspace keycode
       }
     } catch (_) {
