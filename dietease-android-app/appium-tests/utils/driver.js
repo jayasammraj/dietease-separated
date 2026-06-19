@@ -11,24 +11,29 @@ const TEST_EMAIL    = 'guest@dietease.com';
 const TEST_PASSWORD = 'password';
 const APP_PACKAGE = 'com.example.dieteasy';
 
+// Detect if running on emulator (CI) vs real device
+const IS_EMULATOR = (process.env.DEVICE_NAME || '').toLowerCase().includes('emulator');
+
 async function buildDriver() {
   const apkPath = path.resolve(__dirname, '../../app/build/outputs/apk/debug/app-debug.apk');
+  const caps = {
+    platformName: 'Android',
+    'appium:deviceName': process.env.DEVICE_NAME || 'SM-A166P',
+    'appium:udid': process.env.DEVICE_UDID || 'R9ZXA0BDBTM',
+    'appium:automationName': 'UiAutomator2',
+    'appium:app': apkPath,
+    'appium:newCommandTimeout': 300,
+    'appium:ensureWebviewsHavePages': true,
+    'appium:nativeWebScreenshot': true,
+    'appium:autoGrantPermissions': true,
+    // Only use hardware keyboard on real device; emulator needs soft keyboard for setValue
+    'appium:connectHardwareKeyboard': !IS_EMULATOR,
+  };
   const opts = {
     hostname: '127.0.0.1',
     port: 4723,
     path: '/',
-    capabilities: {
-      platformName: 'Android',
-      'appium:deviceName': process.env.DEVICE_NAME || 'SM-A166P',
-      'appium:udid': process.env.DEVICE_UDID || 'R9ZXA0BDBTM',
-      'appium:automationName': 'UiAutomator2',
-      'appium:app': apkPath,
-      'appium:newCommandTimeout': 300,
-      'appium:ensureWebviewsHavePages': true,
-      'appium:nativeWebScreenshot': true,
-      'appium:connectHardwareKeyboard': true,
-      'appium:autoGrantPermissions': true // Auto grant camera/storage permissions
-    },
+    capabilities: caps,
     logLevel: 'error'
   };
   
@@ -62,12 +67,12 @@ async function loginToApp(driver) {
     await passwordField.setValue(TEST_PASSWORD);
 
     // Dismiss keyboard and tap Log In
-    await driver.hideKeyboard();
+    try { await driver.hideKeyboard(); } catch (_) { /* emulator may not have keyboard to hide */ }
     await driver.pause(500);
     await loginBtn.click();
 
     // Wait for main app to load (nav tabs appear)
-    await driver.pause(2000);
+    await driver.pause(3000);
   } catch (e) {
     // If login screen not found or already past it — silently continue
   }
