@@ -15,9 +15,19 @@ class FoodLogStorage(context: Context) {
 
     private val prefs = context.getSharedPreferences("dietease_log", Context.MODE_PRIVATE)
     private val gson  = Gson()
+    private var currentEmail: String? = null
 
     // In-memory reactive state for Flow support
-    private val _allEntries = MutableStateFlow(loadAll())
+    private val _allEntries = MutableStateFlow<List<FoodLogEntry>>(emptyList())
+
+    init {
+        migrateOldData()
+    }
+
+    fun setCurrentUser(email: String?) {
+        currentEmail = email
+        _allEntries.value = loadAll()
+    }
 
     // ── Public Flows ──────────────────────────────────────────────────────────
 
@@ -46,8 +56,25 @@ class FoodLogStorage(context: Context) {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    private fun migrateOldData() {
+        if (prefs.contains("entries")) {
+            val oldEntries = prefs.getString("entries", null)
+            if (oldEntries != null) {
+                if (!prefs.contains("entries_guest@dietease.com")) {
+                    prefs.edit()
+                        .putString("entries_guest@dietease.com", oldEntries)
+                        .remove("entries")
+                        .apply()
+                } else {
+                    prefs.edit().remove("entries").apply()
+                }
+            }
+        }
+    }
+
     private fun loadAll(): List<FoodLogEntry> {
-        val json = prefs.getString("entries", null) ?: return emptyList()
+        val email = currentEmail ?: return emptyList()
+        val json = prefs.getString("entries_$email", null) ?: return emptyList()
         return try {
             val type = object : TypeToken<List<FoodLogEntry>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
@@ -55,6 +82,8 @@ class FoodLogStorage(context: Context) {
     }
 
     private fun saveAll(entries: List<FoodLogEntry>) {
-        prefs.edit().putString("entries", gson.toJson(entries)).apply()
+        val email = currentEmail ?: return
+        prefs.edit().putString("entries_$email", gson.toJson(entries)).apply()
     }
 }
+

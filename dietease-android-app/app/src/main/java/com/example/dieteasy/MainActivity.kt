@@ -39,6 +39,7 @@ fun DietEaseApp() {
     val navController = rememberNavController()
     val viewModel: MainViewModel = viewModel()
     val context = LocalContext.current
+    val currentUserEmail by viewModel.currentUserEmail.collectAsState()
 
     // Show toast messages from ViewModel
     val toast by viewModel.toast.collectAsState()
@@ -49,39 +50,42 @@ fun DietEaseApp() {
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = com.example.dieteasy.ui.theme.DarkSurface,
-                tonalElevation = 0.dp
-            ) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
+    if (currentUserEmail.isNullOrBlank()) {
+        LoginScreen(viewModel = viewModel)
+    } else {
+        Scaffold(
+            bottomBar = {
+                NavigationBar(
+                    containerColor = com.example.dieteasy.ui.theme.DarkSurface,
+                    tonalElevation = 0.dp
+                ) {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.destination?.route
 
-                bottomNavItems.forEach { screen ->
-                    NavigationBarItem(
-                        selected = currentRoute == screen.route,
-                        onClick  = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState    = true
-                            }
-                        },
-                        icon  = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor   = com.example.dieteasy.ui.theme.AccentGreen,
-                            selectedTextColor   = com.example.dieteasy.ui.theme.AccentGreen,
-                            unselectedIconColor = com.example.dieteasy.ui.theme.TextMuted,
-                            unselectedTextColor = com.example.dieteasy.ui.theme.TextMuted,
-                            indicatorColor      = com.example.dieteasy.ui.theme.AccentGreen.copy(alpha = 0.15f)
+                    bottomNavItems.forEach { screen ->
+                        NavigationBarItem(
+                            selected = currentRoute == screen.route,
+                            onClick  = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState    = true
+                                }
+                            },
+                            icon  = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor   = com.example.dieteasy.ui.theme.AccentGreen,
+                                selectedTextColor   = com.example.dieteasy.ui.theme.AccentGreen,
+                                unselectedIconColor = com.example.dieteasy.ui.theme.TextMuted,
+                                unselectedTextColor = com.example.dieteasy.ui.theme.TextMuted,
+                                indicatorColor      = com.example.dieteasy.ui.theme.AccentGreen.copy(alpha = 0.15f)
+                            )
                         )
-                    )
+                    }
                 }
             }
-        }
-    ) { innerPadding ->
+        ) { innerPadding ->
         NavHost(
             navController    = navController,
             startDestination = Screen.Scan.route,
@@ -108,4 +112,5 @@ fun DietEaseApp() {
             }
         }
     }
+}
 }

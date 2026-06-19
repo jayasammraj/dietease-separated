@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,11 +53,18 @@ fun TodayScreen(viewModel: MainViewModel) {
                         Text("📅 Today", style = MaterialTheme.typography.headlineMedium)
                         Text(today, color = TextMuted, fontSize = 13.sp)
                     }
-                    // Goal edit button
-                    IconButton(
-                        onClick = { showGoalDial = true; goalInput = dailyGoal.toString() },
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit goal", tint = AccentGreen)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { showGoalDial = true; goalInput = dailyGoal.toString() },
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit goal", tint = AccentGreen)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { viewModel.logoutUser() },
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = DangerRed)
+                        }
                     }
                 }
 

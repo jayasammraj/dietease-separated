@@ -22,10 +22,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo  = FoodRepository(application)
     private val prefs = application.getSharedPreferences("dietease_prefs", 0)
+    private val gson  = com.google.gson.Gson()
+
+    // ── Authentication ────────────────────────────────────────────────────────
+    private val _currentUserEmail = MutableStateFlow<String?>(prefs.getString("logged_in_user", null))
+    val currentUserEmail: StateFlow<String?> = _currentUserEmail.asStateFlow()
 
     // ── Daily goal ────────────────────────────────────────────────────────────
-    private val _dailyGoal = MutableStateFlow(prefs.getInt("daily_goal", 2000))
+    private val _dailyGoal = MutableStateFlow(2000)
     val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
+
+    init {
+        // Migrate legacy daily goal if exists
+        if (prefs.contains("daily_goal")) {
+            val oldGoal = prefs.getInt("daily_goal", 2000)
+            if (!prefs.contains("daily_goal_guest@dietease.com")) {
+                prefs.edit().putInt("daily_goal_guest@dietease.com", oldGoal).apply()
+            }
+            prefs.edit().remove("daily_goal").apply()
+        }
+
+        // Auto-register guest@dietease.com if not exists
+        val usersJson = prefs.getString("registered_users", "{}") ?: "{}"
+        val type = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
+        val users = gson.fromJson<Map<String, String>>(usersJson, type)?.toMutableMap() ?: mutableMapOf()
+        if (!users.containsKey("guest@dietease.com")) {
+            users["guest@dietease.com"] = "password"
+            prefs.edit().putString("registered_users", gson.toJson(users)).apply()
+        }
+
+        // Initialize user context in repo
+        val email = _currentUserEmail.value
+        repo.setCurrentUser(email)
+        _dailyGoal.value = if (email != null) prefs.getInt("daily_goal_$email", 2000) else 2000
+    }
 
     // ── Today's log ───────────────────────────────────────────────────────────
     val todayLog: StateFlow<List<FoodLogEntry>> = repo.getTodayLog()
@@ -41,6 +71,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedDate = MutableStateFlow(repo.todayKey())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val selectedDateLog: StateFlow<List<FoodLogEntry>> = _selectedDate.flatMapLatest { date ->
         repo.getLogForDate(date)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -61,7 +92,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val filteredProducts = _searchQuery.map { q ->
+    private val _manualProductsTrigger = MutableStateFlow(0)
+
+    val filteredProducts = combine(_searchQuery, _manualProductsTrigger) { q, _ ->
         if (q.isBlank()) repo.getAllProducts()
         else repo.getAllProducts().filter {
             it.name.contains(q, true) || it.brand.contains(q, true)
@@ -126,9 +159,95 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setDailyGoal(goal: Int) {
+        val email = _currentUserEmail.value ?: return
         _dailyGoal.value = goal
-        prefs.edit().putInt("daily_goal", goal).apply()
+        prefs.edit().putInt("daily_goal_$email", goal).apply()
         showToast("🎯 Goal set to $goal kcal!")
+    }
+
+    fun loginUser(email: String, password: String): Boolean {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isEmpty() || password.isEmpty()) {
+            showToast("Email and password required")
+            return false
+        }
+        val usersJson = prefs.getString("registered_users", "{}") ?: "{}"
+        val type = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
+        val users: Map<String, String> = gson.fromJson(usersJson, type) ?: emptyMap()
+        
+        if (users[cleanEmail] == password) {
+            _currentUserEmail.value = cleanEmail
+            prefs.edit().putString("logged_in_user", cleanEmail).apply()
+            repo.setCurrentUser(cleanEmail)
+            _dailyGoal.value = prefs.getInt("daily_goal_$cleanEmail", 2000)
+            showToast("Welcome back!")
+            return true
+        } else {
+            showToast("Invalid credentials")
+            return false
+        }
+    }
+
+    fun registerUser(email: String, password: String): Boolean {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isEmpty() || password.isEmpty()) {
+            showToast("Email and password required")
+            return false
+        }
+        if (!cleanEmail.contains("@")) {
+            showToast("Invalid email address")
+            return false
+        }
+        val usersJson = prefs.getString("registered_users", "{}") ?: "{}"
+        val type = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
+        val users = gson.fromJson<Map<String, String>>(usersJson, type)?.toMutableMap() ?: mutableMapOf()
+        
+        if (users.containsKey(cleanEmail)) {
+            showToast("User already exists")
+            return false
+        }
+        
+        users[cleanEmail] = password
+        prefs.edit().putString("registered_users", gson.toJson(users)).apply()
+        
+        // Auto login
+        _currentUserEmail.value = cleanEmail
+        prefs.edit().putString("logged_in_user", cleanEmail).apply()
+        repo.setCurrentUser(cleanEmail)
+        _dailyGoal.value = prefs.getInt("daily_goal_$cleanEmail", 2000)
+        showToast("Account registered successfully!")
+        return true
+    }
+
+    fun logoutUser() {
+        _currentUserEmail.value = null
+        prefs.edit().remove("logged_in_user").apply()
+        repo.setCurrentUser(null)
+        showToast("Logged out successfully")
+    }
+
+    fun addManualProduct(
+        name: String,
+        brand: String,
+        barcode: String,
+        calories: Int,
+        protein: Float,
+        carbs: Float,
+        fat: Float
+    ) {
+        val item = FoodItem(
+            name = name,
+            brand = brand,
+            barcode = barcode.ifBlank { "manual_" + System.currentTimeMillis() },
+            calories = calories,
+            protein = protein,
+            carbs = carbs,
+            fat = fat,
+            source = "Manual Entry"
+        )
+        repo.addProduct(item)
+        _manualProductsTrigger.value += 1
+        showToast("✅ Product \"$name\" added!")
     }
 
     fun selectDate(date: String) { _selectedDate.value = date }
