@@ -1,5 +1,6 @@
 /**
  * TEST 08 — Products (25 test cases)
+ * Uses only products in the current built-in DB.
  */
 const { clickTab, findByText, findByTextContains } = require('../utils/driver');
 
@@ -50,50 +51,50 @@ module.exports = async function runTests(driver) {
     push('Search Parle Finds Parle-G Biscuits', await item.isDisplayed(), Date.now() - t, 'Parle-G found in list');
   } catch (e) { push('Search Parle Finds Parle-G Biscuits', false, Date.now() - t, e.message); }
 
-  // ── Test 4: Search 'Maggi' returns 'Maggi 2-Minute Noodles' ──────────────
+  // ── Test 4: Search 'Cadbury' returns 'Cadbury Dairy Milk' ────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Maggi');
-    const item = await findByText(driver, 'Maggi 2-Minute Noodles');
+    await searchProduct(driver, 'Cadbury');
+    const item = await findByText(driver, 'Cadbury Dairy Milk');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Maggi Finds Maggi Noodles', await item.isDisplayed(), Date.now() - t, 'Maggi found in list');
-  } catch (e) { push('Search Maggi Finds Maggi Noodles', false, Date.now() - t, e.message); }
+    push('Search Cadbury Finds Cadbury Dairy Milk', await item.isDisplayed(), Date.now() - t, 'Cadbury Dairy Milk found');
+  } catch (e) { push('Search Cadbury Finds Cadbury Dairy Milk', false, Date.now() - t, e.message); }
 
-  // ── Test 5: Search 'Mock' returns mock products ─────────────────────────
+  // ── Test 5: Search 'Kellogg' returns 'Kellogg\'s Cornflakes' ─────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Mock');
-    const item = await findByTextContains(driver, 'Mock Apple');
+    await searchProduct(driver, 'Kellogg');
+    const item = await findByTextContains(driver, "Kellogg");
     await item.waitForExist({ timeout: 5000 });
-    push('Search Mock Finds Mock Apple', await item.isDisplayed(), Date.now() - t, 'Mock Apple found');
-  } catch (e) { push('Search Mock Finds Mock Apple', false, Date.now() - t, e.message); }
+    push("Search Kellogg Finds Kellogg's Product", await item.isDisplayed(), Date.now() - t, "Kellogg's product found");
+  } catch (e) { push("Search Kellogg Finds Kellogg's Product", false, Date.now() - t, e.message); }
 
-  // ── Test 6: Search 'Apple' returns 'Mock Apple' ──────────────────────────
+  // ── Test 6: Search 'Oreo' returns 'Oreo Cookies' ────────────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Apple');
-    const item = await findByTextContains(driver, 'Mock Apple');
+    await searchProduct(driver, 'Oreo');
+    const item = await findByText(driver, 'Oreo Cookies');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Apple Finds Mock Apple', await item.isDisplayed(), Date.now() - t, 'Mock Apple found');
-  } catch (e) { push('Search Apple Finds Mock Apple', false, Date.now() - t, e.message); }
+    push('Search Oreo Finds Oreo Cookies', await item.isDisplayed(), Date.now() - t, 'Oreo Cookies found');
+  } catch (e) { push('Search Oreo Finds Oreo Cookies', false, Date.now() - t, e.message); }
 
-  // ── Test 7: Search 'Banana' returns 'Mock Banana' ────────────────────────
+  // ── Test 7: Search 'Pepsi' returns 'Pepsi 250ml' ─────────────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Banana');
-    const item = await findByTextContains(driver, 'Mock Banana');
+    await searchProduct(driver, 'Pepsi');
+    const item = await findByText(driver, 'Pepsi 250ml');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Banana Finds Mock Banana', await item.isDisplayed(), Date.now() - t, 'Mock Banana found');
-  } catch (e) { push('Search Banana Finds Mock Banana', false, Date.now() - t, e.message); }
+    push('Search Pepsi Finds Pepsi 250ml', await item.isDisplayed(), Date.now() - t, 'Pepsi 250ml found');
+  } catch (e) { push('Search Pepsi Finds Pepsi 250ml', false, Date.now() - t, e.message); }
 
-  // ── Test 8: Search 'Orange' returns 'Mock Orange' ────────────────────────
+  // ── Test 8: Search 'KitKat' returns 'KitKat 4 Finger' ───────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Orange');
-    const item = await findByTextContains(driver, 'Mock Orange');
+    await searchProduct(driver, 'KitKat');
+    const item = await findByText(driver, 'KitKat 4 Finger');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Orange Finds Mock Orange', await item.isDisplayed(), Date.now() - t, 'Mock Orange found');
-  } catch (e) { push('Search Orange Finds Mock Orange', false, Date.now() - t, e.message); }
+    push('Search KitKat Finds KitKat 4 Finger', await item.isDisplayed(), Date.now() - t, 'KitKat 4 Finger found');
+  } catch (e) { push('Search KitKat Finds KitKat 4 Finger', false, Date.now() - t, e.message); }
 
   // ── Test 9: Clear search input returns all products ─────────────────────
   t = Date.now();
@@ -174,70 +175,70 @@ module.exports = async function runTests(driver) {
     push('Search Is Case Insensitive', await item.isDisplayed(), Date.now() - t, 'Found Amul Butter with lowercase input');
   } catch (e) { push('Search Is Case Insensitive', false, Date.now() - t, e.message); }
 
-  // ── Test 15: Search mock strawberry ──────────────────────────────────────
+  // ── Test 15: Search 'Britannia' finds 'Britannia Good Day' ───────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Strawberry');
-    const item = await findByTextContains(driver, 'Strawberry');
+    await searchProduct(driver, 'Britannia');
+    const item = await findByText(driver, 'Britannia Good Day');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Strawberry Finds Mock Strawberry', await item.isDisplayed(), Date.now() - t, 'Strawberry found');
-  } catch (e) { push('Search Strawberry Finds Mock Strawberry', false, Date.now() - t, e.message); }
+    push('Search Britannia Finds Britannia Good Day', await item.isDisplayed(), Date.now() - t, 'Britannia Good Day found');
+  } catch (e) { push('Search Britannia Finds Britannia Good Day', false, Date.now() - t, e.message); }
 
-  // ── Test 16: Search mock grape ───────────────────────────────────────────
+  // ── Test 16: Search 'Sunfeast' finds 'Sunfeast Dark Fantasy' ─────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Grape');
-    const item = await findByTextContains(driver, 'Grape');
+    await searchProduct(driver, 'Sunfeast');
+    const item = await findByText(driver, 'Sunfeast Dark Fantasy');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Grape Finds Mock Grape', await item.isDisplayed(), Date.now() - t, 'Grape found');
-  } catch (e) { push('Search Grape Finds Mock Grape', false, Date.now() - t, e.message); }
+    push('Search Sunfeast Finds Sunfeast Dark Fantasy', await item.isDisplayed(), Date.now() - t, 'Sunfeast Dark Fantasy found');
+  } catch (e) { push('Search Sunfeast Finds Sunfeast Dark Fantasy', false, Date.now() - t, e.message); }
 
-  // ── Test 17: Search mock pineapple ───────────────────────────────────────
+  // ── Test 17: Search 'Coca-Cola' finds 'Coca-Cola 250ml' ──────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Pineapple');
-    const item = await findByTextContains(driver, 'Pineapple');
+    await searchProduct(driver, 'Coca');
+    const item = await findByTextContains(driver, 'Coca-Cola');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Pineapple Finds Mock Pineapple', await item.isDisplayed(), Date.now() - t, 'Pineapple found');
-  } catch (e) { push('Search Pineapple Finds Mock Pineapple', false, Date.now() - t, e.message); }
+    push('Search Coca Finds Coca-Cola Product', await item.isDisplayed(), Date.now() - t, 'Coca-Cola product found');
+  } catch (e) { push('Search Coca Finds Coca-Cola Product', false, Date.now() - t, e.message); }
 
-  // ── Test 18: Search mock blueberry ───────────────────────────────────────
+  // ── Test 18: Search '5 Star' finds Cadbury 5 Star ────────────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Blueberry');
-    const item = await findByTextContains(driver, 'Blueberry');
+    await searchProduct(driver, '5 Star');
+    const item = await findByText(driver, 'Cadbury 5 Star');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Blueberry Finds Mock Blueberry', await item.isDisplayed(), Date.now() - t, 'Blueberry found');
-  } catch (e) { push('Search Blueberry Finds Mock Blueberry', false, Date.now() - t, e.message); }
+    push('Search 5 Star Finds Cadbury 5 Star', await item.isDisplayed(), Date.now() - t, 'Cadbury 5 Star found');
+  } catch (e) { push('Search 5 Star Finds Cadbury 5 Star', false, Date.now() - t, e.message); }
 
-  // ── Test 19: Search mock watermelon ──────────────────────────────────────
+  // ── Test 19: Search 'ITC' finds Sunfeast Dark Fantasy ────────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Watermelon');
-    const item = await findByTextContains(driver, 'Watermelon');
+    await searchProduct(driver, 'ITC');
+    const item = await findByText(driver, 'Sunfeast Dark Fantasy');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Watermelon Finds Mock Watermelon', await item.isDisplayed(), Date.now() - t, 'Watermelon found');
-  } catch (e) { push('Search Watermelon Finds Mock Watermelon', false, Date.now() - t, e.message); }
+    push('Search ITC Brand Finds Sunfeast Dark Fantasy', await item.isDisplayed(), Date.now() - t, 'ITC brand search works');
+  } catch (e) { push('Search ITC Brand Finds Sunfeast Dark Fantasy', false, Date.now() - t, e.message); }
 
-  // ── Test 20: Search mock peach ───────────────────────────────────────────
+  // ── Test 20: Search 'Gold' finds Parle-G Gold ────────────────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Peach');
-    const item = await findByTextContains(driver, 'Peach');
+    await searchProduct(driver, 'Gold');
+    const item = await findByText(driver, 'Parle-G Gold');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Peach Finds Mock Peach', await item.isDisplayed(), Date.now() - t, 'Peach found');
-  } catch (e) { push('Search Peach Finds Mock Peach', false, Date.now() - t, e.message); }
+    push('Search Gold Finds Parle-G Gold', await item.isDisplayed(), Date.now() - t, 'Parle-G Gold found');
+  } catch (e) { push('Search Gold Finds Parle-G Gold', false, Date.now() - t, e.message); }
 
-  // ── Test 21: Search mock cherry ──────────────────────────────────────────
+  // ── Test 21: Search 'Nestlé' or 'Nestle' finds KitKat ───────────────────
   t = Date.now();
   try {
-    await searchProduct(driver, 'Cherry');
-    const item = await findByTextContains(driver, 'Cherry');
+    await searchProduct(driver, 'Nestle');
+    const item = await findByText(driver, 'KitKat 4 Finger');
     await item.waitForExist({ timeout: 5000 });
-    push('Search Cherry Finds Mock Cherry', await item.isDisplayed(), Date.now() - t, 'Cherry found');
-  } catch (e) { push('Search Cherry Finds Mock Cherry', false, Date.now() - t, e.message); }
+    push('Search Nestle Finds KitKat 4 Finger', await item.isDisplayed(), Date.now() - t, 'KitKat found via Nestle brand search');
+  } catch (e) { push('Search Nestle Finds KitKat 4 Finger', false, Date.now() - t, e.message); }
 
-  // ── Test 22: Search with extra spaces trim works ──────────────────────────
+  // ── Test 22: Search with whitespace trim works ────────────────────────────
   t = Date.now();
   try {
     await searchProduct(driver, '   Amul   ');
@@ -246,7 +247,7 @@ module.exports = async function runTests(driver) {
     push('Search Trims Leading And Trailing Whitespace', await item.isDisplayed(), Date.now() - t, 'Amul Butter found');
   } catch (e) { push('Search Trims Leading And Trailing Whitespace', false, Date.now() - t, e.message); }
 
-  // ── Test 23: Navigating to other tabs and back retains search tab functionality ─
+  // ── Test 23: Navigate away and back retains search functionality ─────────
   t = Date.now();
   try {
     await clickTab(driver, 'today');
