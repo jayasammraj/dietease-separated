@@ -86,7 +86,7 @@ module.exports = async function runTests(driver) {
   // ── Test 5: Log second food item (Amul Butter) ────────────────────────
   t = Date.now();
   try {
-    await lookupAndLog(driver, '8901063000001', 'Amul Butter');
+    await lookupAndLog(driver, '8901088002230', 'Amul Butter');
     await clickTab(driver, 'today');
     const item = await findByText(driver, 'Amul Butter');
     await item.waitForExist({ timeout: 5000 });
@@ -155,16 +155,16 @@ module.exports = async function runTests(driver) {
     push('Today Screen Shows Protein Macro', pass, Date.now() - t, pass ? 'Protein macro visible' : 'Protein not shown');
   } catch (e) { push('Today Screen Shows Protein Macro', false, Date.now() - t, e.message); }
 
-  // ── Test 11: Log Maggi Noodles ────────────────────────────────────────
+  // ── Test 11: Log Oreo Cookies ────────────────────────────────────────
   t = Date.now();
   try {
-    await lookupAndLog(driver, '8901058000118', 'Maggi');
+    await lookupAndLog(driver, '037600164801', 'Oreo Cookies');
     await clickTab(driver, 'today');
-    const item = await findByTextContains(driver, 'Maggi');
+    const item = await findByTextContains(driver, 'Oreo Cookies');
     await item.waitForExist({ timeout: 5000 });
     const pass = await item.isDisplayed();
-    push('Log Maggi Noodles Appears in Today Tab', pass, Date.now() - t, pass ? 'Maggi visible' : 'Maggi not found');
-  } catch (e) { push('Log Maggi Noodles Appears in Today Tab', false, Date.now() - t, e.message); }
+    push('Log Oreo Cookies Appears in Today Tab', pass, Date.now() - t, pass ? 'Oreo visible' : 'Oreo not found');
+  } catch (e) { push('Log Oreo Cookies Appears in Today Tab', false, Date.now() - t, e.message); }
 
   // ── Test 12: Today screen food list is scrollable ─────────────────────
   t = Date.now();
@@ -208,16 +208,16 @@ module.exports = async function runTests(driver) {
     push('Today Screen Shows Fat Macro', pass, Date.now() - t, pass ? 'Fat visible' : 'Fat not shown');
   } catch (e) { push('Today Screen Shows Fat Macro', false, Date.now() - t, e.message); }
 
-  // ── Test 15: Log a mock barcode product ───────────────────────────────
+  // ── Test 15: Log Kellogg's Cornflakes ───────────────────────────────
   t = Date.now();
   try {
-    await lookupAndLog(driver, '990000000001', 'Mock Apple');
+    await lookupAndLog(driver, '8901499000018', 'Kellogg\'s Cornflakes');
     await clickTab(driver, 'today');
-    const item = await findByTextContains(driver, 'Apple');
+    const item = await findByTextContains(driver, 'Cornflakes');
     await item.waitForExist({ timeout: 5000 });
     const pass = await item.isDisplayed();
-    push('Log Mock Apple Appears in Today Tab', pass, Date.now() - t, pass ? 'Mock Apple logged' : 'Mock Apple not found');
-  } catch (e) { push('Log Mock Apple Appears in Today Tab', false, Date.now() - t, e.message); }
+    push('Log Kellogg\'s Cornflakes Appears in Today Tab', pass, Date.now() - t, pass ? 'Kellogg\'s logged' : 'Kellogg\'s not found');
+  } catch (e) { push('Log Kellogg\'s Cornflakes Appears in Today Tab', false, Date.now() - t, e.message); }
 
   // ── Test 16: Today screen edit goal button visible ────────────────────
   t = Date.now();
@@ -251,16 +251,16 @@ module.exports = async function runTests(driver) {
     push('Logged Item Displays Food Name in Today List', pass, Date.now() - t, pass ? 'Food name visible' : 'Food name not found');
   } catch (e) { push('Logged Item Displays Food Name in Today List', false, Date.now() - t, e.message); }
 
-  // ── Test 19: Log another mock barcode (990000000002) ─────────────────
+  // ── Test 19: Log Cadbury Dairy Milk ──────────────────────────────────
   t = Date.now();
   try {
-    await lookupAndLog(driver, '990000000002', 'Mock Banana');
+    await lookupAndLog(driver, '7622210449283', 'Cadbury Dairy Milk');
     await clickTab(driver, 'today');
-    const item = await findByTextContains(driver, 'Banana');
+    const item = await findByTextContains(driver, 'Dairy Milk');
     await item.waitForExist({ timeout: 5000 });
     const pass = await item.isDisplayed();
-    push('Log Mock Banana Appears in Today Tab', pass, Date.now() - t, pass ? 'Mock Banana logged' : 'Mock Banana not found');
-  } catch (e) { push('Log Mock Banana Appears in Today Tab', false, Date.now() - t, e.message); }
+    push('Log Cadbury Dairy Milk Appears in Today Tab', pass, Date.now() - t, pass ? 'Cadbury logged' : 'Cadbury not found');
+  } catch (e) { push('Log Cadbury Dairy Milk Appears in Today Tab', false, Date.now() - t, e.message); }
 
   // ── Test 20: Today screen doesn't crash when list is long ─────────────
   t = Date.now();
@@ -298,7 +298,7 @@ module.exports = async function runTests(driver) {
     await clickTab(driver, 'scan');
     const inp = await driver.$('android.widget.EditText');
     await inp.clearValue();
-    await inp.setValue('8901063000001');
+    await inp.setValue('8901088002230');
     const searchBtn = await driver.$('~Search');
     await searchBtn.click();
     await driver.pause(3000);
@@ -309,16 +309,16 @@ module.exports = async function runTests(driver) {
     push('Log This Food Button Has Correct Label', pass, Date.now() - t, pass ? `Button text: ${logText}` : `Unexpected text: ${logText}`);
   } catch (e) { push('Log This Food Button Has Correct Label', false, Date.now() - t, e.message); }
 
-  // ── Test 24: Mock product (990000000003) can be logged ────────────────
+  // ── Test 24: Coca-Cola 250ml can be logged ────────────────────────────
   t = Date.now();
   try {
-    await lookupAndLog(driver, '990000000003', 'Mock Orange');
+    await lookupAndLog(driver, '8901552004123', 'Coca-Cola 250ml');
     await clickTab(driver, 'today');
-    const item = await findByTextContains(driver, 'Orange');
+    const item = await findByTextContains(driver, 'Coca-Cola');
     await item.waitForExist({ timeout: 5000 });
     const pass = await item.isDisplayed();
-    push('Log Mock Orange Appears in Today Tab', pass, Date.now() - t, pass ? 'Mock Orange logged' : 'Mock Orange not found');
-  } catch (e) { push('Log Mock Orange Appears in Today Tab', false, Date.now() - t, e.message); }
+    push('Log Coca-Cola 250ml Appears in Today Tab', pass, Date.now() - t, pass ? 'Coca-Cola logged' : 'Coca-Cola not found');
+  } catch (e) { push('Log Coca-Cola 250ml Appears in Today Tab', false, Date.now() - t, e.message); }
 
   // ── Test 25: App stays responsive after bulk logging ─────────────────
   t = Date.now();

@@ -164,7 +164,7 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '8901063000001'); // Amul Butter
+    await logFood(driver, '8901088002230'); // Amul Butter
     await clickTab(driver, 'history');
     const todayLabel = await findByText(driver, 'Today');
     await todayLabel.click();
@@ -178,14 +178,14 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '990000000001'); // Mock Apple
+    await logFood(driver, '8901499000018'); // Kellogg's Cornflakes
     await clickTab(driver, 'history');
     const todayLabel = await findByText(driver, 'Today');
     await todayLabel.click();
     await driver.pause(1000);
-    const detail = await findByTextContains(driver, 'Apple');
+    const detail = await findByTextContains(driver, 'Cornflakes');
     await detail.waitForExist({ timeout: 5000 });
-    push('History Details Show Logged Mock Apple', await detail.isDisplayed(), Date.now() - t, 'Mock Apple visible');
+    push('History Details Show Logged Mock Apple', await detail.isDisplayed(), Date.now() - t, 'Cornflakes visible');
   } catch (e) { push('History Details Show Logged Mock Apple', false, Date.now() - t, e.message); }
 
   // ── Test 15: Empty history doesn't crash app ─────────────────────────────
@@ -248,30 +248,30 @@ module.exports = async function runTests(driver) {
     push('Double Tap Today Sidebar Item Responsiveness', true, Date.now() - t, 'App stays responsive');
   } catch (e) { push('Double Tap Today Sidebar Item Responsiveness', false, Date.now() - t, e.message); }
 
-  // ── Test 21: Log mock banana, verify in history details ───────────────────
+  // ── Test 21: Log Dairy Milk, verify in history details ───────────────────
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '990000000002'); // Mock Banana
+    await logFood(driver, '7622210449283'); // Cadbury Dairy Milk
     await clickTab(driver, 'history');
     const todayLabel = await findByText(driver, 'Today');
     await todayLabel.click();
     await driver.pause(1000);
-    const detail = await findByTextContains(driver, 'Banana');
-    push('History Details Show Logged Mock Banana', await detail.isDisplayed(), Date.now() - t, 'Mock Banana visible');
+    const detail = await findByTextContains(driver, 'Dairy Milk');
+    push('History Details Show Logged Mock Banana', await detail.isDisplayed(), Date.now() - t, 'Dairy Milk visible');
   } catch (e) { push('History Details Show Logged Mock Banana', false, Date.now() - t, e.message); }
 
-  // ── Test 22: Log mock orange, verify in history details ───────────────────
+  // ── Test 22: Log Coca-Cola 250ml, verify in history details ───────────────────
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '990000000003'); // Mock Orange
+    await logFood(driver, '8901552004123'); // Coca-Cola 250ml
     await clickTab(driver, 'history');
     const todayLabel = await findByText(driver, 'Today');
     await todayLabel.click();
     await driver.pause(1000);
-    const detail = await findByTextContains(driver, 'Orange');
-    push('History Details Show Logged Mock Orange', await detail.isDisplayed(), Date.now() - t, 'Mock Orange visible');
+    const detail = await findByTextContains(driver, 'Coca-Cola');
+    push('History Details Show Logged Mock Orange', await detail.isDisplayed(), Date.now() - t, 'Coca-Cola visible');
   } catch (e) { push('History Details Show Logged Mock Orange', false, Date.now() - t, e.message); }
 
   // ── Test 23: Verify History page layout contains sidebar indicator ────────

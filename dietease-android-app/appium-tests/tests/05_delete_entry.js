@@ -107,7 +107,7 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '8901063000001');
+    await logFood(driver, '8901088002230');
     await clickTab(driver, 'today');
     let btns = await driver.$$('~Delete');
     while (btns.length > 0) {
@@ -141,7 +141,7 @@ module.exports = async function runTests(driver) {
   try {
     await clearAll(driver);
     await logFood(driver, '8901719100018');
-    await logFood(driver, '8901063000001');
+    await logFood(driver, '8901088002230');
     await clickTab(driver, 'today');
     const before = await driver.$$('~Delete');
     const countBefore = before.length;
@@ -171,8 +171,8 @@ module.exports = async function runTests(driver) {
   try {
     await clearAll(driver);
     await logFood(driver, '8901719100018');
-    await logFood(driver, '8901063000001');
-    await logFood(driver, '990000000001');
+    await logFood(driver, '8901088002230');
+    await logFood(driver, '8901499000018');
     await clickTab(driver, 'today');
     const before = await driver.$$('~Delete');
     if (before.length < 1) throw new Error('Expected items to delete');
@@ -188,7 +188,7 @@ module.exports = async function runTests(driver) {
   try {
     await clearAll(driver);
     await logFood(driver, '8901719100018');
-    await logFood(driver, '8901063000001');
+    await logFood(driver, '8901088002230');
     await clickTab(driver, 'today');
     const btns = await driver.$$('~Delete');
     for (const btn of btns) {
@@ -224,11 +224,11 @@ module.exports = async function runTests(driver) {
     push('Delete Button Has Accessibility Description', pass, Date.now() - t, pass ? 'Delete button found via content-desc' : 'Delete button not found');
   } catch (e) { push('Delete Button Has Accessibility Description', false, Date.now() - t, e.message); }
 
-  // ── Test 13: Mock product can be deleted ──────────────────────────────
+  // ── Test 13: Kellogg's Cornflakes can be deleted ──────────────────────────────
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '990000000001');
+    await logFood(driver, '8901499000018');
     await clickTab(driver, 'today');
     const before = await driver.$$('~Delete');
     if (before.length === 0) throw new Error('No items to delete');
@@ -236,7 +236,7 @@ module.exports = async function runTests(driver) {
     await driver.pause(800);
     const after = await driver.$$('~Delete');
     const pass = after.length < before.length;
-    push('Mock Product Entry Can Be Deleted', pass, Date.now() - t, pass ? 'Mock product deleted' : 'Mock product could not be deleted');
+    push('Mock Product Entry Can Be Deleted', pass, Date.now() - t, pass ? 'Product deleted' : 'Product could not be deleted');
   } catch (e) { push('Mock Product Entry Can Be Deleted', false, Date.now() - t, e.message); }
 
   // ── Test 14: Today tab stays selected after deletion ──────────────────
@@ -257,7 +257,7 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '8901063000001');
+    await logFood(driver, '8901088002230');
     await clickTab(driver, 'today');
     const delBtns = await driver.$$('~Delete');
     if (delBtns.length === 0) throw new Error('No items to delete');
@@ -318,7 +318,7 @@ module.exports = async function runTests(driver) {
   try {
     await clearAll(driver);
     for (let i = 0; i < 3; i++) {
-      await logFood(driver, '990000000001');
+      await logFood(driver, '8901499000018');
     }
     await clickTab(driver, 'today');
     let btns = await driver.$$('~Delete');
@@ -351,7 +351,7 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '8901063000001');
+    await logFood(driver, '8901088002230');
     await clickTab(driver, 'today');
     const btns = await driver.$$('~Delete');
     if (btns.length > 0) { await btns[0].click(); await driver.pause(800); }
@@ -384,7 +384,7 @@ module.exports = async function runTests(driver) {
   t = Date.now();
   try {
     await clearAll(driver);
-    await logFood(driver, '990000000002');
+    await logFood(driver, '7622210449283');
     await clickTab(driver, 'today');
     const btns = await driver.$$('~Delete');
     const pass = btns.length === 1;

@@ -103,22 +103,22 @@ module.exports = async function runTests(driver) {
   // ── Test 9: Known barcode → Amul Butter ───────────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '8901063000001');
+    await lookupBarcode(driver, '8901088002230');
     const card = await findByText(driver, 'Amul Butter');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup 8901063000001 Shows Amul Butter', pass, Date.now() - t, pass ? 'Amul Butter card visible' : 'Amul Butter not found');
-  } catch (e) { push('Lookup 8901063000001 Shows Amul Butter', false, Date.now() - t, e.message); }
+    push('Lookup 8901088002230 Shows Amul Butter', pass, Date.now() - t, pass ? 'Amul Butter card visible' : 'Amul Butter not found');
+  } catch (e) { push('Lookup 8901088002230 Shows Amul Butter', false, Date.now() - t, e.message); }
 
-  // ── Test 10: Known barcode → Maggi Noodles ────────────────────────────
+  // ── Test 10: Known barcode → Oreo Cookies ────────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '8901058000118');
-    const card = await findByText(driver, 'Maggi 2-Minute Noodles');
+    await lookupBarcode(driver, '037600164801');
+    const card = await findByText(driver, 'Oreo Cookies');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup 8901058000118 Shows Maggi Noodles', pass, Date.now() - t, pass ? 'Maggi card visible' : 'Maggi card not found');
-  } catch (e) { push('Lookup 8901058000118 Shows Maggi Noodles', false, Date.now() - t, e.message); }
+    push('Lookup 037600164801 Shows Oreo Cookies', pass, Date.now() - t, pass ? 'Oreo card visible' : 'Oreo card not found');
+  } catch (e) { push('Lookup 037600164801 Shows Oreo Cookies', false, Date.now() - t, e.message); }
 
   // ── Test 11: Unknown barcode shows manual entry form ──────────────────
   t = Date.now();
@@ -158,32 +158,32 @@ module.exports = async function runTests(driver) {
   // ── Test 14: Known barcode → Britannia Good Day ───────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '8901063100001');
+    await lookupBarcode(driver, '8901063032019');
     const card = await findByTextContains(driver, 'Britannia');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
     push('Lookup Returns Britannia Product', pass, Date.now() - t, pass ? 'Britannia product card visible' : 'Britannia not found');
   } catch (e) { push('Lookup Returns Britannia Product', false, Date.now() - t, e.message); }
 
-  // ── Test 15: Mock product barcode 990000000001 ─────────────────────────
+  // ── Test 15: Kellogg's Cornflakes barcode 8901499000018 ─────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '990000000001');
-    const card = await findByTextContains(driver, 'Apple');
+    await lookupBarcode(driver, '8901499000018');
+    const card = await findByTextContains(driver, 'Kellogg');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup 990000000001 Shows Mock Apple', pass, Date.now() - t, pass ? 'Mock Apple found' : 'Mock Apple not found');
-  } catch (e) { push('Lookup 990000000001 Shows Mock Apple', false, Date.now() - t, e.message); }
-
-  // ── Test 16: Mock product barcode 990000000002 ─────────────────────────
+    push('Lookup 8901499000018 Shows Kellogg\'s Product', pass, Date.now() - t, pass ? 'Kellogg\'s product found' : 'Kellogg\'s product not found');
+  } catch (e) { push('Lookup 8901499000018 Shows Kellogg\'s Product', false, Date.now() - t, e.message); }
+ 
+  // ── Test 16: Cadbury Dairy Milk barcode 7622210449283 ─────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '990000000002');
-    const card = await findByTextContains(driver, 'Banana');
+    await lookupBarcode(driver, '7622210449283');
+    const card = await findByTextContains(driver, 'Cadbury');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup 990000000002 Shows Mock Banana', pass, Date.now() - t, pass ? 'Mock Banana found' : 'Mock Banana not found');
-  } catch (e) { push('Lookup 990000000002 Shows Mock Banana', false, Date.now() - t, e.message); }
+    push('Lookup 7622210449283 Shows Cadbury Product', pass, Date.now() - t, pass ? 'Cadbury product found' : 'Cadbury product not found');
+  } catch (e) { push('Lookup 7622210449283 Shows Cadbury Product', false, Date.now() - t, e.message); }
 
   // ── Test 17: Result card shows brand name ─────────────────────────────
   t = Date.now();
@@ -204,7 +204,7 @@ module.exports = async function runTests(driver) {
     const closeBtn = await driver.$('~Close');
     if (await closeBtn.isExisting()) { await closeBtn.click(); await driver.pause(500); }
     // Do another lookup
-    await lookupBarcode(driver, '8901063000001');
+    await lookupBarcode(driver, '8901088002230');
     const card = await findByText(driver, 'Amul Butter');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
@@ -248,15 +248,15 @@ module.exports = async function runTests(driver) {
     push('Result Card Shows Built-in DB Badge', pass, Date.now() - t, pass ? 'DB badge visible' : 'DB badge not found');
   } catch (e) { push('Result Card Shows Built-in DB Badge', false, Date.now() - t, e.message); }
 
-  // ── Test 22: Known barcode → Kurkure ──────────────────────────────────
+  // ── Test 22: Known barcode → Parle Hide & Seek ──────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '8901030678921');
-    const card = await findByTextContains(driver, 'Kurkure');
+    await lookupBarcode(driver, '8901719110017');
+    const card = await findByTextContains(driver, 'Hide & Seek');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup Returns Kurkure Product', pass, Date.now() - t, pass ? 'Kurkure card visible' : 'Kurkure not found');
-  } catch (e) { push('Lookup Returns Kurkure Product', false, Date.now() - t, e.message); }
+    push('Lookup Returns Hide & Seek Product', pass, Date.now() - t, pass ? 'Hide & Seek card visible' : 'Hide & Seek not found');
+  } catch (e) { push('Lookup Returns Hide & Seek Product', false, Date.now() - t, e.message); }
 
   // ── Test 23: Result card is scrollable if content overflows ───────────
   t = Date.now();
@@ -293,15 +293,15 @@ module.exports = async function runTests(driver) {
     push('13-Digit Barcode Accepted in Input', pass, Date.now() - t, pass ? `Input value: ${val}` : 'Failed to enter barcode');
   } catch (e) { push('13-Digit Barcode Accepted in Input', false, Date.now() - t, e.message); }
 
-  // ── Test 25: Mock product barcode 990000000003 ─────────────────────────
+  // ── Test 25: Coca-Cola 250ml barcode 8901552004123 ─────────────────────────
   t = Date.now();
   try {
-    await lookupBarcode(driver, '990000000003');
-    const card = await findByTextContains(driver, 'Orange');
+    await lookupBarcode(driver, '8901552004123');
+    const card = await findByTextContains(driver, 'Coca-Cola');
     await card.waitForExist({ timeout: 10000 });
     const pass = await card.isDisplayed();
-    push('Lookup 990000000003 Shows Mock Orange', pass, Date.now() - t, pass ? 'Mock Orange found' : 'Mock Orange not found');
-  } catch (e) { push('Lookup 990000000003 Shows Mock Orange', false, Date.now() - t, e.message); }
+    push('Lookup 8901552004123 Shows Coca-Cola', pass, Date.now() - t, pass ? 'Coca-Cola found' : 'Coca-Cola not found');
+  } catch (e) { push('Lookup 8901552004123 Shows Coca-Cola', false, Date.now() - t, e.message); }
 
   return results;
 };
