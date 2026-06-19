@@ -46,19 +46,44 @@ async function buildDriver() {
     try {
       await this.click();
       await origClearValue();
-      const text = await this.getText();
-      if (text && text.length > 0) {
-        for (let i = 0; i < text.length + 3; i++) {
-          await driver.pressKeyCode(67); // Backspace keycode
-        }
+      // Send 20 backspaces to ensure Compose clears its state
+      for (let i = 0; i < 20; i++) {
+        await driver.pressKeyCode(67); // Backspace keycode
       }
     } catch (_) {
       await origClearValue();
     }
   }, true);
 
+  // Overwrite setValue to type numeric values reliably via keycodes on emulator
+  driver.overwriteCommand('setValue', async function (origSetValue, value) {
+    try {
+      await this.click();
+      await this.clearValue();
+      await driver.pause(200);
+
+      const strVal = String(value);
+      // If it contains only digits and decimal dots, type via native keycodes
+      if (/^[0-9.]+$/.test(strVal)) {
+        for (const char of strVal) {
+          if (char === '.') {
+            await driver.pressKeyCode(56); // Period keycode
+          } else {
+            const digit = parseInt(char, 10);
+            await driver.pressKeyCode(digit + 7); // 0 is 7, 1 is 8, ...
+          }
+        }
+      } else {
+        await origSetValue(value);
+      }
+    } catch (_) {
+      await origSetValue(value);
+    }
+  }, true);
+
   return driver;
 }
+
 
 
 /**
