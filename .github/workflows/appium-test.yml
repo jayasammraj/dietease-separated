@@ -37,10 +37,16 @@ jobs:
       working-directory: dietease-android-app/appium-tests
       run: npm install
 
-    - name: Install Appium drivers
-      run: |
-        npx appium driver install uiautomator2@2 || true
+    - name: Install or Update Appium uiautomator2 driver
       working-directory: dietease-android-app/appium-tests
+      run: |
+        if npx appium driver list --installed 2>/dev/null | grep -q "uiautomator2"; then
+          echo "uiautomator2 already installed, updating..."
+          npx appium driver update uiautomator2 || true
+        else
+          echo "Installing uiautomator2..."
+          npx appium driver install uiautomator2@2
+        fi
 
     - name: Build Debug APK
       working-directory: dietease-android-app
