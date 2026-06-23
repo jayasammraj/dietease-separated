@@ -1,0 +1,1 @@
+{ "name": "dietease-integration-tests", "version": "1.0.0", "description": "Integration Tests for DietEase+", "main": "run-integration-tests.js", "scripts": { "test": "node run-integration-tests.js" } }

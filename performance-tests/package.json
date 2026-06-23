@@ -1,0 +1,1 @@
+{ "name": "dietease-performance-tests", "version": "1.0.0", "description": "Performance Regression Tests for DietEase+", "main": "run-perf-tests.js", "scripts": { "test": "node run-perf-tests.js" } }
