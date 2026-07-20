@@ -1,4 +1,5 @@
 name: DietEase+ - Full CI/CD Test Suite (300+ Tests)
+run-name: Full CI/CD Test Suite
 
 on:
   push:

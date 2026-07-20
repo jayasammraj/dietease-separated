@@ -1,4 +1,5 @@
 name: Baseline Load Tests (300 Checks)
+run-name: Load Tests
 
 on:
   push:

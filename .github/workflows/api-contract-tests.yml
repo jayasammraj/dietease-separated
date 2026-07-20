@@ -1,4 +1,5 @@
 name: API Contract Tests (300 Checks)
+run-name: API Contract Tests
 
 on:
   push:

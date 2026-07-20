@@ -1,4 +1,5 @@
 name: Integration Tests (300 Assertions)
+run-name: Integration Tests
 
 on:
   push:

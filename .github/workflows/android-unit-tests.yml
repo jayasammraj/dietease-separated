@@ -1,4 +1,5 @@
 name: Android Unit Tests (150+ Checks)
+run-name: Android Unit Tests
 
 on:
   push:

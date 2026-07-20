@@ -1,4 +1,5 @@
 name: Performance Regression Tests (300 Checks)
+run-name: Performance Regression Tests
 
 on:
   push:

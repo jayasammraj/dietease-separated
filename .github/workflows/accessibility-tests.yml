@@ -1,4 +1,5 @@
 name: Accessibility Tests - WCAG 2.1 (300 Checks)
+run-name: Accessibility Tests - WCAG 2.1
 
 on:
   push:
