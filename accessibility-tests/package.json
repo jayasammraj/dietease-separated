@@ -1,1 +1,8 @@
-{ "name": "dietease-accessibility-tests", "version": "1.0.0", "description": "WCAG 2.1 Accessibility Tests for DietEase+", "main": "run-a11y-tests.js", "scripts": { "test": "node run-a11y-tests.js" } }
+{
+  "name": "dietease-accessibility-tests",
+  "version": "1.0.0",
+  "description": "WCAG 2.1 Accessibility Tests for DietEase+",
+  "main": "run-a11y-tests.js",
+  "scripts": { "test": "node run-a11y-tests.js" },
+  "dependencies": { "exceljs": "^4.4.0" }
+}

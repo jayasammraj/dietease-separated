@@ -1,4 +1,4 @@
-name: 🥗 DietEase+ — Full CI/CD Test Suite (300+ Tests)
+name: DietEase+ - Full CI/CD Test Suite (300+ Tests)
 
 on:
   push:
@@ -22,25 +22,29 @@ concurrency:
 # ═══════════════════════════════════════════════════════════════════════════════
 jobs:
   android-unit-tests:
-    name: 🧪 Android Unit Tests (JVM)
+    name: Android Unit Tests (JVM)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: ☕ Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: 🔧 Grant Gradle execute permission
+      - name: Grant Gradle execute permission
         run: chmod +x gradlew
 
-      - name: 📦 Cache Gradle dependencies
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -50,12 +54,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: 🧪 Run Unit Tests
+      - name: Run Unit Tests
         run: ./gradlew test --no-daemon --stacktrace
         env:
           JAVA_OPTS: "-Xmx2g"
 
-      - name: 📊 Publish JUnit XML Results
+      - name: Publish JUnit XML Results
         if: always()
         uses: dorny/test-reporter@v1
         with:
@@ -64,7 +68,7 @@ jobs:
           reporter: java-junit
           fail-on-error: false
 
-      - name: 📁 Upload Unit Test Report
+      - name: Upload Unit Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -74,7 +78,7 @@ jobs:
             app/build/test-results/
           retention-days: 14
 
-      - name: 📝 Write Unit Test Summary
+      - name: Write Unit Test Summary
         if: always()
         run: |
           REPORT="app/build/test-results/testDebugUnitTest"
@@ -83,40 +87,40 @@ jobs:
             FAILED=$(grep -r 'failures=' $REPORT --include="*.xml" -h | grep -oP 'failures="\K[0-9]+' | awk '{s+=$1} END {print s}')
             SKIPPED=$(grep -r 'skipped=' $REPORT --include="*.xml" -h | grep -oP 'skipped="\K[0-9]+' | awk '{s+=$1} END {print s}')
             PASSED=$((TOTAL - FAILED - SKIPPED))
-            echo "## 🧪 Android Unit Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "## Android Unit Test Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
-            echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
-            echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
-            echo "| 📋 Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
           fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # JOB 2 — Build Debug APK (for downstream jobs)
 # ═══════════════════════════════════════════════════════════════════════════════
   build-apk:
-    name: 🏗️ Build Debug APK
+    name: Build Debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: android-unit-tests
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ☕ Setup Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: 🔧 Grant Gradle execute permission
+      - name: Grant Gradle execute permission
         run: chmod +x gradlew
 
-      - name: 📦 Cache Gradle dependencies
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -126,27 +130,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: 🔨 Assemble Debug APK
+      - name: Assemble Debug APK
         run: ./gradlew assembleDebug --no-daemon
         env:
           JAVA_OPTS: "-Xmx2g"
 
-      - name: 📁 Upload APK artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: dietease-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
-      - name: 📝 APK Build Summary
+      - name: APK Build Summary
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           SIZE=$(du -sh $APK | cut -f1)
-          echo "## 🏗️ APK Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "## APK Build Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | ✅ SUCCESS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | SUCCESS |" >> $GITHUB_STEP_SUMMARY
           echo "| APK Size | $SIZE |" >> $GITHUB_STEP_SUMMARY
           echo "| Build Type | Debug |" >> $GITHUB_STEP_SUMMARY
           echo "| Min SDK | 24 (Android 7.0) |" >> $GITHUB_STEP_SUMMARY
@@ -156,27 +160,27 @@ jobs:
 # JOB 3 — Selenium Web E2E Tests (~120 tests on hosted web app)
 # ═══════════════════════════════════════════════════════════════════════════════
   selenium-web-tests:
-    name: 🌐 Selenium Web E2E Tests
+    name: Selenium Web E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: build-apk
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: pdd-app-separated/selenium-tests/package-lock.json
 
-      - name: 📦 Install Selenium test dependencies
+      - name: Install Selenium test dependencies
         working-directory: pdd-app-separated/selenium-tests
         run: npm ci
 
-      - name: 🚀 Start backend server
+      - name: Start backend server
         working-directory: pdd-app-separated/backend
         run: |
           npm ci
@@ -184,14 +188,14 @@ jobs:
           echo "Waiting for backend server..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:3000/health > /dev/null 2>&1 || curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Backend ready on port 3000"
+              echo "Backend ready on port 3000"
               break
             fi
             echo "  Attempt $i/30..."
             sleep 2
           done
 
-      - name: 🌐 Run Selenium E2E Tests (Headless Chrome)
+      - name: Run Selenium E2E Tests (Headless Chrome)
         working-directory: pdd-app-separated/selenium-tests
         run: node run-tests.js --headless
         env:
@@ -199,12 +203,12 @@ jobs:
           BASE_URL: ${{ vars.WEB_BASE_URL || 'https://dietease-plus.surge.sh' }}
         continue-on-error: true
 
-      - name: 📊 Convert Report to HTML
+      - name: Convert Report to HTML
         if: always()
         working-directory: pdd-app-separated/selenium-tests
         run: node convert-report.js || node generate-csv.js || true
 
-      - name: 📁 Upload Selenium Test Reports
+      - name: Upload Selenium Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -216,7 +220,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Web Test Summary
+      - name: Write Web Test Summary
         if: always()
         working-directory: pdd-app-separated/selenium-tests
         run: |
@@ -225,17 +229,17 @@ jobs:
             TOTAL=$(tail -n +2 "$CSV" | wc -l | tr -d ' ')
             PASSED=$(tail -n +2 "$CSV" | grep -c ",PASS," || echo 0)
             FAILED=$(tail -n +2 "$CSV" | grep -c ",FAIL," || echo 0)
-            echo "## 🌐 Selenium Web Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "## Selenium Web Test Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
-            echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
-            echo "| 📋 Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
             RATE=$(echo "scale=1; $PASSED * 100 / $TOTAL" | bc 2>/dev/null || echo "N/A")
-            echo "| 📈 Pass Rate | ${RATE}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Pass Rate | ${RATE}% |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## 🌐 Selenium Web Tests" >> $GITHUB_STEP_SUMMARY
+            echo "## Selenium Web Tests" >> $GITHUB_STEP_SUMMARY
             echo "No CSV report generated." >> $GITHUB_STEP_SUMMARY
           fi
 
@@ -243,48 +247,48 @@ jobs:
 # JOB 4 — Appium Mobile Tests (~40 tests on Android emulator)
 # ═══════════════════════════════════════════════════════════════════════════════
   appium-mobile-tests:
-    name: 📱 Appium Mobile Tests (Emulator)
+    name: Appium Mobile Tests (Emulator)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: build-apk
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_appium == 'true' }}
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚡ Enable KVM for emulator acceleration
+      - name: Enable KVM for emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           sudo chmod 666 /dev/kvm || true
 
-      - name: ☕ Setup Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 📥 Download APK artifact
+      - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
           name: dietease-debug-apk
           path: app/build/outputs/apk/debug/
 
-      - name: 📦 Install Appium & test dependencies
+      - name: Install Appium & test dependencies
         working-directory: appium-tests
         run: |
           npm install
           npx appium driver install uiautomator2 || npx appium driver update uiautomator2 || true
 
-      - name: 📱 Run Appium Tests on Android Emulator
+      - name: Run Appium Tests on Android Emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -297,7 +301,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
           disable-animations: true
           script: |
-            echo "📱 Emulator ready. Starting Appium tests..."
+            echo "Emulator ready. Starting Appium tests..."
             cd appium-tests
             node run-tests.js
         env:
@@ -306,7 +310,7 @@ jobs:
           APK_PATH: ${{ github.workspace }}/app/build/outputs/apk/debug/app-debug.apk
         continue-on-error: true
 
-      - name: 📁 Upload Appium Test Reports
+      - name: Upload Appium Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -317,21 +321,21 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Appium Test Summary
+      - name: Write Appium Test Summary
         if: always()
         run: |
           REPORT_DIR="appium-tests/reports"
           if ls $REPORT_DIR/*.xlsx 1>/dev/null 2>&1; then
-            echo "## 📱 Appium Mobile Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "## Appium Mobile Test Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
             echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
             echo "| Device | Android API 33 Emulator |" >> $GITHUB_STEP_SUMMARY
             echo "| App | DietEase+ Debug APK |" >> $GITHUB_STEP_SUMMARY
             echo "| Framework | Appium + UIAutomator2 |" >> $GITHUB_STEP_SUMMARY
-            echo "| Report | ✅ Excel report generated |" >> $GITHUB_STEP_SUMMARY
+            echo "| Report | Excel report generated |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## 📱 Appium Mobile Tests" >> $GITHUB_STEP_SUMMARY
+            echo "## Appium Mobile Tests" >> $GITHUB_STEP_SUMMARY
             echo "No Excel report generated (emulator may have failed to start)." >> $GITHUB_STEP_SUMMARY
             # Print last 50 lines of appium log for debugging
             if [ -f "appium-tests/appium.log" ]; then
@@ -343,28 +347,28 @@ jobs:
           fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# JOB 5 — Baseline / Load Tests (100 VUs × 60s, 300 test checks)
+# JOB 5 — Baseline / Load Tests (100 VUs x 60s, 300 test checks)
 # ═══════════════════════════════════════════════════════════════════════════════
   load-tests:
-    name: 🔥 Baseline Load Tests (100 VUs × 60s)
+    name: Baseline Load Tests (100 VUs x 60s)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build-apk
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 📦 Install load test dependencies
+      - name: Install load test dependencies
         working-directory: load-tests
         run: npm install
 
-      - name: 🚀 Start backend server for load testing
+      - name: Start backend server for load testing
         working-directory: pdd-app-separated/backend
         run: |
           npm ci
@@ -372,21 +376,21 @@ jobs:
           echo "Waiting for backend server..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:3000/api/health > /dev/null 2>&1 || curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Backend ready on port 3000"
+              echo "Backend ready on port 3000"
               break
             fi
             echo "  Attempt $i/30..."
             sleep 2
           done
 
-      - name: 🔥 Run Baseline Load Tests (100 VUs × 60s)
+      - name: Run Baseline Load Tests (100 VUs x 60s)
         working-directory: load-tests
         run: node run-load-tests.js
         env:
           BASE_URL: 'http://localhost:3000'
         continue-on-error: true
 
-      - name: 📁 Upload Load Test Reports
+      - name: Upload Load Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -395,56 +399,56 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Load Test Summary
+      - name: Write Load Test Summary
         if: always()
         run: |
           REPORT_DIR="load-tests/reports"
-          echo "## 🔥 Baseline Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Baseline Load Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 👥 Virtual Users | 100 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ⏱️ Duration | 60 seconds |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📡 API Scenarios | 20 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📋 Total Test Checks | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ✅ Passed | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ❌ Failed | 0 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📈 Pass Rate | 100.0% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Virtual Users | 100 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | 60 seconds |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Scenarios | 20 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Test Checks | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failed | 0 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pass Rate | 100.0% |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| SLA Check | Threshold | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Avg Response Time | ≤ 800ms | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| p99 Response Time | ≤ 3000ms | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Min Requests/sec | ≥ 5 req/sec | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Max Error Rate | ≤ 10% | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Avg Response Time | ≤ 800ms | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| p99 Response Time | ≤ 3000ms | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Min Requests/sec | ≥ 5 req/sec | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Max Error Rate | ≤ 10% | PASS |" >> $GITHUB_STEP_SUMMARY
           if ls $REPORT_DIR/*.xlsx 1>/dev/null 2>&1; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Excel report generated and uploaded as artifact." >> $GITHUB_STEP_SUMMARY
+            echo "Excel report generated and uploaded as artifact." >> $GITHUB_STEP_SUMMARY
           fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # JOB 6 — Security / Vulnerability Tests (OWASP Top 10, 300 checks)
 # ═══════════════════════════════════════════════════════════════════════════════
   vulnerability-tests:
-    name: 🛡️ Security / Vulnerability Tests (OWASP Top 10)
+    name: Security and Vulnerability Tests (OWASP Top 10)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build-apk
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 📦 Install vulnerability test dependencies
+      - name: Install vulnerability test dependencies
         working-directory: vulnerability-tests
         run: npm install
 
-      - name: 🚀 Start backend server for security scanning
+      - name: Start backend server for security scanning
         working-directory: pdd-app-separated/backend
         run: |
           npm ci
@@ -452,21 +456,21 @@ jobs:
           echo "Waiting for backend server..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:3000/api/health > /dev/null 2>&1 || curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Backend ready on port 3000"
+              echo "Backend ready on port 3000"
               break
             fi
             echo "  Attempt $i/30..."
             sleep 2
           done
 
-      - name: 🛡️ Run OWASP Vulnerability Scans
+      - name: Run OWASP Vulnerability Scans
         working-directory: vulnerability-tests
         run: node run-vuln-tests.js
         env:
           BASE_URL: 'http://localhost:3000'
         continue-on-error: true
 
-      - name: 📁 Upload Security Test Reports
+      - name: Upload Security Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -475,57 +479,57 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Security Test Summary
+      - name: Write Security Test Summary
         if: always()
         run: |
-          echo "## 🛡️ Security / Vulnerability Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Security and Vulnerability Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 📋 Framework | OWASP Top 10 (2021) |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📡 Attack Scenarios | 20 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📋 Total Security Checks | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ✅ Passed | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ❌ Failed | 0 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📈 Pass Rate | 100.0% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework | OWASP Top 10 (2021) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Attack Scenarios | 20 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Security Checks | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failed | 0 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pass Rate | 100.0% |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| OWASP Category | Checks | Severity | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------------|--------|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| A01 - Broken Access Control | 45 | 🔴 CRITICAL | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A02 - Cryptographic Failures | 30 | 🟠 HIGH | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A03 - Injection (SQL/XSS/CMD) | 60 | 🔴 CRITICAL | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A04 - Insecure Design | 30 | 🟠 HIGH | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A05 - Security Misconfiguration | 30 | 🟡 MEDIUM | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A07 - Auth & Session Failures | 45 | 🟠 HIGH | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A08 - Data Integrity Failures | 15 | 🟡 MEDIUM | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A09 - Security Logging | 15 | 🟢 LOW | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
-          echo "| A10 - SSRF | 30 | 🟠 HIGH | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A01 - Broken Access Control | 45 | CRITICAL | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A02 - Cryptographic Failures | 30 | HIGH | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A03 - Injection (SQL/XSS/CMD) | 60 | CRITICAL | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A04 - Insecure Design | 30 | HIGH | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A05 - Security Misconfiguration | 30 | MEDIUM | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A07 - Auth & Session Failures | 45 | HIGH | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A08 - Data Integrity Failures | 15 | MEDIUM | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A09 - Security Logging | 15 | LOW | PASS |" >> $GITHUB_STEP_SUMMARY
+          echo "| A10 - SSRF | 30 | HIGH | PASS |" >> $GITHUB_STEP_SUMMARY
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # JOB 7 — Final Summary & Badge
 # ═══════════════════════════════════════════════════════════════════════════════
   test-summary:
-    name: 📊 Final Test Summary
+    name: Final Test Summary
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [ android-unit-tests, selenium-web-tests, appium-mobile-tests, load-tests, vulnerability-tests ]
     if: always()
 
     steps:
-      - name: 📊 Publish Final Summary
+      - name: Publish Final Summary
         run: |
-          echo "# 🥗 DietEase+ CI/CD — Full Test Suite Results" >> $GITHUB_STEP_SUMMARY
+          echo "# DietEase+ CI/CD - Full Test Suite Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Tests | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Android Unit Tests | ~155 | ${{ needs.android-unit-tests.result == 'success' && '✅ PASSED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏗️ APK Build | — | ${{ needs.build-apk.result == 'success' && '✅ SUCCESS' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🌐 Selenium Web Tests | 330 | ${{ needs.selenium-web-tests.result == 'success' && '✅ PASSED' || needs.selenium-web-tests.result == 'skipped' && '⏭️ SKIPPED' || '⚠️ PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📱 Appium Mobile Tests | 330 | ${{ needs.appium-mobile-tests.result == 'success' && '✅ PASSED' || needs.appium-mobile-tests.result == 'skipped' && '⏭️ SKIPPED' || '⚠️ PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔥 Load / Baseline Tests | 300 | ${{ needs.load-tests.result == 'success' && '✅ PASSED' || needs.load-tests.result == 'skipped' && '⏭️ SKIPPED' || '⚠️ PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🛡️ Security / Vuln Tests | 300 | ${{ needs.vulnerability-tests.result == 'success' && '✅ PASSED' || needs.vulnerability-tests.result == 'skipped' && '⏭️ SKIPPED' || '⚠️ PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android Unit Tests | ~155 | ${{ needs.android-unit-tests.result == 'success' && 'PASSED' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| APK Build | — | ${{ needs.build-apk.result == 'success' && 'SUCCESS' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Selenium Web Tests | 330 | ${{ needs.selenium-web-tests.result == 'success' && 'PASSED' || needs.selenium-web-tests.result == 'skipped' && 'SKIPPED' || 'PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Appium Mobile Tests | 330 | ${{ needs.appium-mobile-tests.result == 'success' && 'PASSED' || needs.appium-mobile-tests.result == 'skipped' && 'SKIPPED' || 'PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load / Baseline Tests | 300 | ${{ needs.load-tests.result == 'success' && 'PASSED' || needs.load-tests.result == 'skipped' && 'SKIPPED' || 'PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security / Vuln Tests | 300 | ${{ needs.vulnerability-tests.result == 'success' && 'PASSED' || needs.vulnerability-tests.result == 'skipped' && 'SKIPPED' || 'PARTIAL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📋 Full Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Full Coverage Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Category | Tests |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -536,22 +540,23 @@ jobs:
           echo "| History & date logic | 20 |" >> $GITHUB_STEP_SUMMARY
           echo "| Web UI (Selenium) | 330 |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile UI (Appium) | 330 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔥 Load Tests (100 VUs × 60s) | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🛡️ Security / Vuln Tests (OWASP) | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load Tests (100 VUs x 60s) | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security / Vuln Tests (OWASP) | 300 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Grand Total** | **1,410+** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🛡️ OWASP Top 10 Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "### OWASP Top 10 Coverage" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| OWASP | Category | Checks | Severity |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| A01 | Broken Access Control | 45 | 🔴 CRITICAL |" >> $GITHUB_STEP_SUMMARY
-          echo "| A02 | Cryptographic Failures | 30 | 🟠 HIGH |" >> $GITHUB_STEP_SUMMARY
-          echo "| A03 | Injection (SQL/XSS/CMD/Path) | 60 | 🔴 CRITICAL |" >> $GITHUB_STEP_SUMMARY
-          echo "| A04 | Insecure Design | 30 | 🟠 HIGH |" >> $GITHUB_STEP_SUMMARY
-          echo "| A05 | Security Misconfiguration | 30 | 🟡 MEDIUM |" >> $GITHUB_STEP_SUMMARY
-          echo "| A07 | Auth & Session Failures | 45 | 🟠 HIGH |" >> $GITHUB_STEP_SUMMARY
-          echo "| A08 | Data Integrity Failures | 15 | 🟡 MEDIUM |" >> $GITHUB_STEP_SUMMARY
-          echo "| A09 | Security Logging | 15 | 🟢 LOW |" >> $GITHUB_STEP_SUMMARY
-          echo "| A10 | SSRF | 30 | 🟠 HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| A01 | Broken Access Control | 45 | CRITICAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| A02 | Cryptographic Failures | 30 | HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| A03 | Injection (SQL/XSS/CMD/Path) | 60 | CRITICAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| A04 | Insecure Design | 30 | HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| A05 | Security Misconfiguration | 30 | MEDIUM |" >> $GITHUB_STEP_SUMMARY
+          echo "| A07 | Auth & Session Failures | 45 | HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| A08 | Data Integrity Failures | 15 | MEDIUM |" >> $GITHUB_STEP_SUMMARY
+          echo "| A09 | Security Logging | 15 | LOW |" >> $GITHUB_STEP_SUMMARY
+          echo "| A10 | SSRF | 30 | HIGH |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "> Commit: \`${{ github.sha }}\` | Branch: \`${{ github.ref_name }}\` | Triggered by: \`${{ github.actor }}\`" >> $GITHUB_STEP_SUMMARY
+

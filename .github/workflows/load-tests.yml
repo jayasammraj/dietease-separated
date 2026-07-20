@@ -1,4 +1,4 @@
-name: 🔥 Baseline Load Tests (300 Checks)
+name: Baseline Load Tests (300 Checks)
 
 on:
   push:
@@ -13,24 +13,24 @@ concurrency:
 
 jobs:
   load-tests:
-    name: 🔥 Baseline Load Tests (100 VUs × 60s)
+    name: Baseline Load Tests (100 VUs x 60s)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 📦 Install load test dependencies
+      - name: Install load test dependencies
         working-directory: load-tests
         run: npm install
 
-      - name: 🚀 Start backend server for load testing
+      - name: Start backend server for load testing
         working-directory: pdd-app-separated/backend
         run: |
           npm ci
@@ -38,21 +38,21 @@ jobs:
           echo "Waiting for backend server..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:3000/api/health > /dev/null 2>&1 || curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Backend ready on port 3000"
+              echo "Backend ready on port 3000"
               break
             fi
             echo "  Attempt $i/30..."
             sleep 2
           done
 
-      - name: 🔥 Run Baseline Load Tests (100 VUs × 60s)
+      - name: Run Baseline Load Tests (100 VUs x 60s)
         working-directory: load-tests
         run: node run-load-tests.js
         env:
           BASE_URL: 'http://localhost:3000'
         continue-on-error: true
 
-      - name: 📁 Upload Load Test Reports
+      - name: Upload Load Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -60,3 +60,4 @@ jobs:
           path: load-tests/reports/*.xlsx
           if-no-files-found: warn
           retention-days: 14
+

@@ -4,6 +4,73 @@
  * 20 endpoint groups × 15 contract assertions each = 300 total
  */
 
+const ExcelJS = require('exceljs');
+const path    = require('path');
+const fs      = require('fs');
+
+const REPORTS_DIR = path.join(__dirname, 'reports');
+
+async function generateExcelReport(results) {
+  if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const fileName = `API_Contract_Test_Report_DietEasePlus_${ts}.xlsx`;
+  const filePath = path.join(REPORTS_DIR, fileName);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'DietEase+ CI';
+  wb.created = new Date();
+
+  // --- Summary Sheet ---
+  const summary = wb.addWorksheet('Summary');
+  summary.columns = [
+    { header: 'Metric',    key: 'metric', width: 35 },
+    { header: 'Value',     key: 'value',  width: 20 },
+  ];
+  const passed = results.filter(r => r.status === 'PASS').length;
+  const failed = results.filter(r => r.status === 'FAIL').length;
+  const total  = results.length;
+  [
+    { metric: 'Suite',          value: 'API Contract Tests' },
+    { metric: 'Total Tests',    value: total   },
+    { metric: 'Passed',         value: passed  },
+    { metric: 'Failed',         value: failed  },
+    { metric: 'Pass Rate',      value: `${((passed/total)*100).toFixed(2)}%` },
+    { metric: 'Endpoint Groups',value: 20      },
+    { metric: 'Assertions Each',value: 15      },
+    { metric: 'Generated At',   value: new Date().toLocaleString() },
+  ].forEach(r => summary.addRow(r));
+  summary.getRow(1).font = { bold: true };
+
+  // --- Results Sheet ---
+  const sheet = wb.addWorksheet('API Contract Results');
+  sheet.columns = [
+    { header: '#',          key: 'idx',      width: 6  },
+    { header: 'Test Name',  key: 'name',     width: 70 },
+    { header: 'Status',     key: 'status',   width: 10 },
+    { header: 'Endpoint',   key: 'endpoint', width: 35 },
+    { header: 'Method',     key: 'method',   width: 10 },
+    { header: 'Check',      key: 'check',    width: 55 },
+    { header: 'Duration(ms)',key: 'duration',width: 14 },
+    { header: 'Timestamp',  key: 'ts',       width: 26 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  results.forEach((r, i) => {
+    const row = sheet.addRow({
+      idx: i + 1, name: r.name, status: r.status,
+      endpoint: r.endpoint || '', method: r.method || '',
+      check: r.check || '', duration: r.duration,
+      ts: new Date(r.timestamp).toISOString(),
+    });
+    row.getCell('status').fill = {
+      type: 'pattern', pattern: 'solid',
+      fgColor: { argb: r.status === 'PASS' ? 'FF92D050' : 'FFFF0000' },
+    };
+  });
+
+  await wb.xlsx.writeFile(filePath);
+  return filePath;
+}
+
 const C = {
   green:  '\x1b[32m', red:    '\x1b[31m', cyan:   '\x1b[36m',
   yellow: '\x1b[33m', bold:   '\x1b[1m',  reset:  '\x1b[0m'
@@ -107,12 +174,20 @@ async function main() {
 
   // Write GitHub Actions step summary
   if (process.env.GITHUB_STEP_SUMMARY) {
-    const fs = require('fs');
-    const summary = `## 🧪 API Contract Test Results\n\n| Metric | Value |\n|--------|-------|\n| ✅ Passed | ${passed} |\n| ❌ Failed | ${failed} |\n| 📋 Total | ${total} |\n| 🎯 Pass Rate | ${((passed/total)*100).toFixed(2)}% |\n`;
+    const summary = `## API Contract Test Results\n\n| Metric | Value |\n|--------|-------|\n| Passed | ${passed} |\n| Failed | ${failed} |\n| Total | ${total} |\n| Pass Rate | ${((passed/total)*100).toFixed(2)}% |\n`;
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+  }
+
+  // Generate Excel report
+  try {
+    const reportPath = await generateExcelReport(allResults);
+    log(`\nExcel report saved: ${reportPath}`);
+  } catch (err) {
+    log(`Warning: Could not generate Excel report: ${err.message}`);
   }
 
   process.exit(0);
 }
 
 main().catch(err => { console.error(err); process.exit(0); });
+

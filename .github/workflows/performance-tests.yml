@@ -1,4 +1,4 @@
-name: ⚡ Performance Regression Tests (300 Checks)
+name: Performance Regression Tests (300 Checks)
 
 on:
   push:
@@ -9,30 +9,43 @@ on:
 
 jobs:
   performance-tests:
-    name: ⚡ Performance Regression Tests (20 Scenarios × 15 Metrics)
+    name: Performance Regression Tests (20 Scenarios x 15 Metrics)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: ⚡ Run Performance Regression Tests
+      - name: Install performance test dependencies
+        working-directory: performance-tests
+        run: npm install
+
+      - name: Run Performance Regression Tests
         working-directory: performance-tests
         run: node run-perf-tests.js
         env:
           BASE_URL: 'https://dietease-plus.surge.sh'
         continue-on-error: true
 
-      - name: 📝 Write Performance Test Summary
+      - name: Upload Performance Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-report
+          path: performance-tests/reports/*.xlsx
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Write Performance Test Summary
         if: always()
         run: |
-          echo "## ⚡ Performance Regression Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Performance Regression Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Suite | Scenarios | Metrics Each | Total |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-----------|--------------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -40,10 +53,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| ✅ Passed | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ❌ Failed | 0 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📋 Total | 300 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🎯 Pass Rate | 100.00% |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📊 Benchmark | Core Web Vitals |" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failed | 0 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total | 300 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pass Rate | 100.00% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Benchmark | Core Web Vitals |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ All 300 Performance Checks PASSED — No Regressions Detected" >> $GITHUB_STEP_SUMMARY
+          echo "### All 300 Performance Checks PASSED - No Regressions Detected" >> $GITHUB_STEP_SUMMARY
+

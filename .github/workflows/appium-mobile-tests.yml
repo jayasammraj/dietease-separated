@@ -1,4 +1,4 @@
-name: 📱 Appium Mobile Tests (330 Checks)
+name: Appium Mobile Tests (330 Checks)
 
 on:
   push:
@@ -13,42 +13,42 @@ concurrency:
 
 jobs:
   appium-mobile-tests:
-    name: 📱 Appium Mobile Tests (Emulator)
+    name: Appium Mobile Tests (Emulator)
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚡ Enable KVM for emulator acceleration
+      - name: Enable KVM for emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           sudo chmod 666 /dev/kvm || true
 
-      - name: ☕ Setup Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 🔧 Grant Gradle execute permission
+      - name: Grant Gradle execute permission
         run: chmod +x gradlew
 
-      - name: 🔨 Assemble Debug APK
+      - name: Assemble Debug APK
         run: ./gradlew assembleDebug --no-daemon
         env:
           JAVA_OPTS: "-Xmx2g"
 
-      - name: 📦 Cache Gradle dependencies
+      - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -58,13 +58,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: 📦 Install Appium & test dependencies
+      - name: Install Appium and test dependencies
         working-directory: appium-tests
         run: |
           npm install
           npx appium driver install uiautomator2 || npx appium driver update uiautomator2 || true
 
-      - name: 📱 Run Appium Tests on Android Emulator
+      - name: Run Appium Tests on Android Emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -77,7 +77,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -no-metrics
           disable-animations: true
           script: |
-            echo "📱 Emulator ready. Starting Appium tests..."
+            echo "Emulator ready. Starting Appium tests..."
             cd appium-tests
             node run-tests.js
         env:
@@ -86,7 +86,7 @@ jobs:
           APK_PATH: ${{ github.workspace }}/app/build/outputs/apk/debug/app-debug.apk
         continue-on-error: true
 
-      - name: 📁 Upload Appium Test Reports
+      - name: Upload Appium Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -97,21 +97,21 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Appium Test Summary
+      - name: Write Appium Test Summary
         if: always()
         run: |
           REPORT_DIR="appium-tests/reports"
           if ls $REPORT_DIR/*.xlsx 1>/dev/null 2>&1; then
-            echo "## 📱 Appium Mobile Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "## Appium Mobile Test Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
             echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
             echo "| Device | Android API 33 Emulator |" >> $GITHUB_STEP_SUMMARY
             echo "| App | DietEase+ Debug APK |" >> $GITHUB_STEP_SUMMARY
             echo "| Framework | Appium + UIAutomator2 |" >> $GITHUB_STEP_SUMMARY
-            echo "| Report | ✅ Excel report generated |" >> $GITHUB_STEP_SUMMARY
+            echo "| Report | Excel report generated |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## 📱 Appium Mobile Tests" >> $GITHUB_STEP_SUMMARY
+            echo "## Appium Mobile Tests" >> $GITHUB_STEP_SUMMARY
             echo "No Excel report generated (emulator may have failed to start)." >> $GITHUB_STEP_SUMMARY
             if [ -f "appium-tests/appium.log" ]; then
               echo "### Appium Log (last 50 lines)" >> $GITHUB_STEP_SUMMARY
@@ -120,3 +120,4 @@ jobs:
               echo '```' >> $GITHUB_STEP_SUMMARY
             fi
           fi
+

@@ -1,1 +1,8 @@
-{ "name": "dietease-api-contract-tests", "version": "1.0.0", "description": "API Contract Tests for DietEase+", "main": "run-api-tests.js", "scripts": { "test": "node run-api-tests.js" } }
+{
+  "name": "dietease-api-contract-tests",
+  "version": "1.0.0",
+  "description": "API Contract Tests for DietEase+",
+  "main": "run-api-tests.js",
+  "scripts": { "test": "node run-api-tests.js" },
+  "dependencies": { "exceljs": "^4.4.0" }
+}

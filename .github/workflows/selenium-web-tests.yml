@@ -1,4 +1,4 @@
-name: 🌐 Selenium Web Tests (330 Checks)
+name: Selenium Web Tests (330 Checks)
 
 on:
   push:
@@ -13,26 +13,26 @@ concurrency:
 
 jobs:
   selenium-web-tests:
-    name: 🌐 Selenium Web E2E Tests
+    name: Selenium Web E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js 20
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: pdd-app-separated/selenium-tests/package-lock.json
 
-      - name: 📦 Install Selenium test dependencies
+      - name: Install Selenium test dependencies
         working-directory: pdd-app-separated/selenium-tests
         run: npm ci
 
-      - name: 🚀 Start backend server
+      - name: Start backend server
         working-directory: pdd-app-separated/backend
         run: |
           npm ci
@@ -40,14 +40,14 @@ jobs:
           echo "Waiting for backend server..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:3000/health > /dev/null 2>&1 || curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Backend ready on port 3000"
+              echo "Backend ready on port 3000"
               break
             fi
             echo "  Attempt $i/30..."
             sleep 2
           done
 
-      - name: 🌐 Run Selenium E2E Tests (Headless Chrome)
+      - name: Run Selenium E2E Tests (Headless Chrome)
         working-directory: pdd-app-separated/selenium-tests
         run: node run-tests.js --headless
         env:
@@ -55,12 +55,12 @@ jobs:
           BASE_URL: ${{ vars.WEB_BASE_URL || 'https://dietease-plus.surge.sh' }}
         continue-on-error: true
 
-      - name: 📊 Convert Report to HTML
+      - name: Convert Report to HTML
         if: always()
         working-directory: pdd-app-separated/selenium-tests
         run: node convert-report.js || node generate-csv.js || true
 
-      - name: 📁 Upload Selenium Test Reports
+      - name: Upload Selenium Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -72,7 +72,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: 📝 Write Web Test Summary
+      - name: Write Web Test Summary
         if: always()
         working-directory: pdd-app-separated/selenium-tests
         run: |
@@ -81,16 +81,17 @@ jobs:
             TOTAL=$(tail -n +2 "$CSV" | wc -l | tr -d ' ')
             PASSED=$(tail -n +2 "$CSV" | grep -c ",PASS," || echo 0)
             FAILED=$(tail -n +2 "$CSV" | grep -c ",FAIL," || echo 0)
-            echo "## 🌐 Selenium Web Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "## Selenium Web Test Results" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
-            echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
-            echo "| 📋 Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
             RATE=$(echo "scale=1; $PASSED * 100 / $TOTAL" | bc 2>/dev/null || echo "N/A")
-            echo "| 📈 Pass Rate | ${RATE}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Pass Rate | ${RATE}% |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## 🌐 Selenium Web Tests" >> $GITHUB_STEP_SUMMARY
+            echo "## Selenium Web Tests" >> $GITHUB_STEP_SUMMARY
             echo "No CSV report generated." >> $GITHUB_STEP_SUMMARY
           fi
+
